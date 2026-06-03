@@ -4,30 +4,62 @@ from dotenv import load_dotenv # type: ignore
 
 load_dotenv()
 
+# 🗺️ Diccionario definitivo de traducciones (TLA -> Español)
 TRADUCCIONES_PAISES = {
+    # --- Tus iniciales ---
+    "ALG": "Argelia",
     "ARG": "Argentina",
+    "AUS": "Australia",
+    "AUT": "Austria",
+
+    "BEL": "Bélgica",
+    "BIH": "Bosnia y Herzegovina",
     "BRA": "Brasil",
-    "GER": "Alemania",
-    "FRA": "Francia",
-    "ESP": "España",
-    "ITA": "Italia",
+
+    "CAN": "Canadá",
+    "CIV": "Costa de Marfil",
+    "COD": "República Democrática del Congo",
+    "COL": "Colombia",
+    "CPV": "Cabo Verde",
+    "CRO": "Croacia",
+    "CUR": "Curazao",
+    "CZE": "República Checa",
+
+    "DEN": "Dinamarca",
+    "ECU": "Ecuador",
+    "EGY": "Egipto",
     "ENG": "Inglaterra",
-    "NED": "Países Bajos",
+    "ESP": "España",
+    "FRA": "Francia",
+    "GER": "Alemania",
+    "GHA": "Ghana",
+    "HAI": "Haití",
+    "IRN": "Irán",
+    "IRQ": "Irak",
+    "ITA": "Italia",
+    "JOR": "Jordania",
     "KSA": "Arabia Saudita",
-    "USA": "Estados Unidos",
-    "MEX": "México",
-    "JPN": "Japón",
     "KOR": "Corea del Sur",
     "MAR": "Marruecos",
-    "CRO": "Croacia",
+    "MEX": "México",
+    "NED": "Países Bajos",
+    "NOR": "Noruega",
+    "NZL": "Nueva Zelanda",
+    "PAN": "Panamá",
+    "PAR": "Paraguay",
     "POR": "Portugal",
-    "URU": "Uruguay",
-    "COL": "Colombia",
-    "CAN": "Canadá",
-    "BEL": "Bélgica",
+    "QAT": "Catar",
+    "RSA": "Sudáfrica",
+    "SCO": "Escocia",
+    "SEN": "Senegal",
     "SUI": "Suiza",
-    "DEN": "Dinamarca",
-    # AGREGAR
+    "SWE": "Suecia",
+    "TUN": "Túnez",
+    "TUR": "Turquía",
+    "URY": "Uruguay",
+    "USA": "Estados Unidos",
+    "UZB": "Uzbekistán",
+
 }
 
 class FootballAPIService:
