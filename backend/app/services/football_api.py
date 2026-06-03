@@ -4,27 +4,23 @@ from dotenv import load_dotenv # type: ignore
 
 load_dotenv()
 
-# 🗺️ Diccionario definitivo de traducciones (TLA -> Español)
+# (TLA -> Español)
 TRADUCCIONES_PAISES = {
-    # --- Tus iniciales ---
     "ALG": "Argelia",
     "ARG": "Argentina",
     "AUS": "Australia",
     "AUT": "Austria",
-
     "BEL": "Bélgica",
     "BIH": "Bosnia y Herzegovina",
     "BRA": "Brasil",
-
     "CAN": "Canadá",
     "CIV": "Costa de Marfil",
     "COD": "República Democrática del Congo",
     "COL": "Colombia",
     "CPV": "Cabo Verde",
     "CRO": "Croacia",
-    "CUR": "Curazao",
+    "CUW": "Curazao",
     "CZE": "República Checa",
-
     "DEN": "Dinamarca",
     "ECU": "Ecuador",
     "EGY": "Egipto",
@@ -38,6 +34,7 @@ TRADUCCIONES_PAISES = {
     "IRQ": "Irak",
     "ITA": "Italia",
     "JOR": "Jordania",
+    "JPN": "Japón",
     "KSA": "Arabia Saudita",
     "KOR": "Corea del Sur",
     "MAR": "Marruecos",
@@ -58,9 +55,8 @@ TRADUCCIONES_PAISES = {
     "TUR": "Turquía",
     "URY": "Uruguay",
     "USA": "Estados Unidos",
-    "UZB": "Uzbekistán",
-
-}
+    "UZB": "Uzbekistán"
+    }
 
 class FootballAPIService:
     def __init__(self):
