@@ -5,25 +5,29 @@ from dotenv import load_dotenv # type: ignore
 load_dotenv()
 
 TRADUCCIONES_PAISES = {
-    "Argentina": "Argentina",
-    "Brazil": "Brasil",
-    "Germany": "Alemania",
-    "France": "Francia",
-    "Spain": "España",
-    "Italy": "Italia",
-    "England": "Inglaterra",
-    "Netherlands": "Países Bajos",
-    "Saudi Arabia": "Arabia Saudita",
-    "United States": "Estados Unidos",
-    "Mexico": "México",
-    "Japan": "Japón",
-    "South Korea": "Corea del Sur",
-    "Morocco": "Marruecos",
-    "Croatia": "Croacia",
-    "Portugal": "Portugal",
-    "Uruguay": "Uruguay",
-    "Colombia": "Colombia",
-    # +
+    "ARG": "Argentina",
+    "BRA": "Brasil",
+    "GER": "Alemania",
+    "FRA": "Francia",
+    "ESP": "España",
+    "ITA": "Italia",
+    "ENG": "Inglaterra",
+    "NED": "Países Bajos",
+    "KSA": "Arabia Saudita",
+    "USA": "Estados Unidos",
+    "MEX": "México",
+    "JPN": "Japón",
+    "KOR": "Corea del Sur",
+    "MAR": "Marruecos",
+    "CRO": "Croacia",
+    "POR": "Portugal",
+    "URU": "Uruguay",
+    "COL": "Colombia",
+    "CAN": "Canadá",
+    "BEL": "Bélgica",
+    "SUI": "Suiza",
+    "DEN": "Dinamarca",
+    # AGREGAR
 }
 
 class FootballAPIService:
@@ -50,15 +54,15 @@ class FootballAPIService:
         partidos_limpios = []
 
         for match in matches:
-            home_en = match.get("homeTeam", {}).get("name")
-            away_en = match.get("awayTeam", {}).get("name")
+            home_tla = match.get("homeTeam", {}).get("tla")
+            away_tla = match.get("awayTeam", {}).get("tla")
             
             # Si todavía no hay equipos definidos (fases avanzadas vacías), los salteamos
-            if not home_en or not away_en:
+            if not home_tla or not away_tla:
                 continue
             
-            home_es = TRADUCCIONES_PAISES.get(home_en, home_en)
-            away_es = TRADUCCIONES_PAISES.get(away_en, away_en)
+            home_es = TRADUCCIONES_PAISES.get(home_tla, home_tla)
+            away_es = TRADUCCIONES_PAISES.get(away_tla, away_tla)
 
             # Estructuramos el diccionario para la tabla 'partidos'
             partido = {
