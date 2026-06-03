@@ -5,6 +5,7 @@ import { supabase } from './lib/supabaseClient'
 import Login from './pages/Login'
 import Register from './pages/Register'
 import Dashboard from './pages/Dashboard'
+import TablaPuntos from './pages/TablaPuntos'
 
 export default function App() {
   const [session, setSession] = useState(null)
@@ -38,6 +39,8 @@ export default function App() {
 
         {/* Rutas protegidas (si no está logueado, rebota al login) */}
         <Route path="/dashboard" element={session ? <Dashboard /> : <Navigate to="/login" />} />
+        <Route path="/tabla" element={session ? <TablaPuntos /> : <Navigate to="/login" />} />
+        
 
         {/* Ruta por defecto */}
         <Route path="*" element={<Navigate to={session ? "/dashboard" : "/login"} />} />

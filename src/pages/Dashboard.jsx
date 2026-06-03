@@ -90,17 +90,38 @@ export default function Dashboard() {
 
   return (
     <div className="dashboard-container">
-      {/* Barra superior */}
+      {/* Barra superior fija */}
       <header className="dashboard-header">
         <h1 className="welcome-text">
           ⚽ ¡Hola, <span className="username-highlight">{username || 'Jugador'}</span>!
         </h1>
-        <button onClick={handleLogout} className="btn-logout">
-          Cerrar Sesión
-        </button>
+        <div className="header-actions">
+          {/* Botón Fixture */}
+          <button 
+            onClick={() => navigate('/dashboard')} 
+            className={`btn-nav ${location.pathname === '/dashboard' ? 'active' : ''}`}
+            title="Fixture"
+          >
+            📅
+          </button>
+
+          {/* Botón Tabla */}
+          <button 
+            onClick={() => navigate('/tabla')} 
+            className={`btn-nav ${location.pathname === '/tabla' ? 'active' : ''}`}
+            title="Tabla de Posiciones"
+          >
+            📊
+          </button>
+
+          {/* Botón Cerrar Sesión */}
+          <button onClick={handleLogout} className="btn-logout">
+            Salir
+          </button>
+        </div>
       </header>
 
-      <main>
+      <main className='dashboard-main-scroll'>
         <h2 className="fixture-title">Fixture Fase de Grupos</h2>
         
         <div className="partidos-list">
@@ -113,7 +134,7 @@ export default function Dashboard() {
                 key={partido.id_api} 
                 partido={partido} 
                 userId={userId} 
-                votoInicial={miVoto} // <-- Le pasamos el voto inicial si existe
+                votoInicial={miVoto}
                 formatearFecha={formatearFecha} 
               />
             )

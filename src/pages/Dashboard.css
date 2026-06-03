@@ -1,12 +1,15 @@
 .dashboard-container {
   width: 100%;
-  max-width: 600px; /* Se acopla perfecto al tamaño de un smartphone */
+  max-width: 600px;
   margin: 0 auto;
-  padding: 16px;
+  padding: 16px 16px 0 16px; /* Sacamos el padding-bottom para que no desfase abajo */
   font-family: sans-serif;
   color: #fff;
   background-color: #121212;
-  min-height: 100vh;
+  height: 100vh; /* Forzamos a que ocupe exactamente el alto de la pantalla */
+  display: flex;
+  flex-direction: column;
+  overflow: hidden; /* Clava la pantalla al piso, evita el rebote general en celulares */
   box-sizing: border-box;
 }
 
@@ -16,18 +19,29 @@
   align-items: center;
   border-bottom: 1px solid #222;
   padding-bottom: 16px;
-  margin-bottom: 20px;
+  margin-bottom: 16px;
+  flex-shrink: 0;
 }
 
-.welcome-text {
-  margin: 0;
-  font-size: 20px;
+/* Botones de navegación con emojis */
+.btn-nav {
+  background: #222;
+  border: 1px solid #333;
+  font-size: 18px;
+  padding: 6px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
 }
 
-.username-highlight {
-  color: #4caf50;
+/* Efecto cuando estás parado en esa página */
+.btn-nav.active {
+  background-color: #121212;
+  border-color: #4caf50; /* Color verde como tu username */
+  box-shadow: 0 0 5px rgba(76, 175, 80, 0.3);
 }
 
+/* Renombramos tu botón de logout para que combine en tamaño */
 .btn-logout {
   padding: 8px 12px;
   background-color: #e53935;
@@ -37,6 +51,33 @@
   font-weight: bold;
   font-size: 13px;
   cursor: pointer;
+  height: 34px; /* Forzamos altura para emparejar con los iconos */
+  display: flex;
+  align-items: center;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px; /* Separación entre los iconos y el botón de salir */
+}
+
+.dashboard-main-scroll {
+  flex: 1;
+  height: calc(100vh - 100px); 
+  overflow-y: auto;
+  padding-bottom: 20px; /* Padding tranqui estándar */
+  box-sizing: border-box;
+  -webkit-overflow-scrolling: touch;
+}
+
+.welcome-text {
+  margin: 0;
+  font-size: 20px;
+}
+
+.username-highlight {
+  color: #4caf50;
 }
 
 .fixture-title {
