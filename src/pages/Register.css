@@ -1,0 +1,99 @@
+/* Contenedor principal adaptable */
+.auth-container {
+  width: 90%; /* En celulares deja un margen lindo a los costados */
+  max-width: 400px; /* En pantallas grandes no se deforma */
+  margin: 60px auto; /* Menos margen arriba en mobile */
+  padding: 24px;
+  font-family: sans-serif;
+  border: 1px solid #333;
+  border-radius: 12px; /* Bordes más redondeados y modernos */
+  background-color: #1e1e1e;
+  color: #fff;
+  box-sizing: border-box;
+}
+
+.auth-title {
+  text-align: center;
+  margin-bottom: 24px;
+  font-size: 22px;
+}
+
+.auth-error {
+  color: #ff6b6b;
+  text-align: center;
+  margin-bottom: 15px;
+  font-size: 14px;
+}
+
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.auth-label {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+/* Inputs táctiles (más altos para que sea fácil escribir en celular) */
+.auth-input {
+  width: 100%;
+  height: 44px; /* Altura ideal recomendada para mobile */
+  padding: 0 12px;
+  box-sizing: border-box;
+  border-radius: 8px;
+  border: 1px solid #444;
+  background-color: #333;
+  color: #fff;
+  font-size: 16px; /* Evita que iOS haga un zoom molesto al enfocar */
+}
+
+.auth-input:focus {
+  outline: none;
+  border-color: #2196f3;
+}
+
+/* Botones grandes y fáciles de clickear */
+.auth-button-register, .auth-button-login {
+  height: 46px;
+  cursor: pointer;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-weight: bold;
+  font-size: 16px;
+  margin-top: 10px;
+  transition: background-color 0.2s;
+}
+
+.auth-button-register { background-color: #4caf50; }
+.auth-button-register:hover { background-color: #43a047; }
+
+.auth-button-login { background-color: #2196f3; }
+.auth-button-login:hover { background-color: #1e88e5; }
+
+.auth-button-register:disabled, .auth-button-login:disabled {
+  background-color: #555;
+  cursor: not-allowed;
+}
+
+.auth-footer {
+  margin-top: 20px;
+  text-align: center;
+  font-size: 14px;
+  color: #aaa;
+}
+
+.auth-link {
+  color: #64b5f6;
+  text-decoration: none;
+  font-weight: bold;
+}
+
+.auth-link:hover {
+  text-decoration: underline;
+}
