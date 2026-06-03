@@ -1,29 +1,40 @@
 import { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabaseClient'
 import './Dashboard.css'
+import PartidoCard from '../components/PartidoCard'
 
 export default function Dashboard() {
   const [partidos, setPartidos] = useState([])
+  const [pronosticos, setPronosticos] = useState([])
   const [username, setUsername] = useState('')
+  const [userId, setUserId] = useState('')
   const [loading, setLoading] = useState(true)
+  const navigate = useNavigate()
 
   useEffect(() => {
     async function cargarDatosDashboard() {
       try {
         // 1. Obtener el usuario actual autenticado
         const { data: { user } } = await supabase.auth.getUser()
-
-        if (user) {
-          // 2. Traer su username desde la tabla profiles
-          const { data: profileData } = await supabase
-            .from('profiles')
-            .select('username')
-            .eq('id', user.id)
-            .single()
-          
-          if (profileData) setUsername(profileData.username)
+        
+        if (!user) {
+          navigate('/login')
+          return
         }
 
+        // Si hay usuario, guardamos sus datos
+        setUserId(user.id)
+
+          // 2. Traer su username desde la tabla profiles
+        const { data: profileData } = await supabase
+          .from('profiles')
+          .select('username')
+          .eq('id', user.id)
+          .single()
+          
+        if (profileData) setUsername(profileData.username)
+        
         // 3. Traer los partidos ordenados por fecha
         const { data: partidosData, error: partidosError } = await supabase
           .from('partidos')
@@ -33,6 +44,15 @@ export default function Dashboard() {
         if (partidosError) throw partidosError
         if (partidosData) setPartidos(partidosData)
 
+        // Traer los pronósticos del usuario actual
+        const { data: pronosticosData, error: pronosticosError } = await supabase
+          .from('pronosticos')
+          .select('*')
+          .eq('user_id', user.id)
+
+        if (pronosticosError) throw pronosticosError
+        if (pronosticosData) setPronosticos(pronosticosData)
+
       } catch (error) {
         console.error('Error cargando datos del dashboard:', error)
       } finally {
@@ -41,10 +61,11 @@ export default function Dashboard() {
     }
 
     cargarDatosDashboard()
-  }, [])
+  }, [navigate])
 
-  const handleLogout = () => {
-    supabase.auth.signOut()
+  const handleLogout = async () => {
+    await supabase.auth.signOut()
+    navigate('/login') // Al cerrar sesión, también redirigimos explícitamente
   }
 
   // Función formateadora de fecha para que quede linda (ej: "jue 11 jun, 16:00")
@@ -60,7 +81,11 @@ export default function Dashboard() {
   }
 
   if (loading) {
-    return <div className="dashboard-container"><p className="loading-text">Cargando fixture del mundial...</p></div>
+    return (
+      <div className="dashboard-container">
+        <p className="loading-text">Cargando fixture del mundial...</p>
+      </div>
+    )
   }
 
   return (
@@ -79,31 +104,20 @@ export default function Dashboard() {
         <h2 className="fixture-title">Fixture Fase de Grupos</h2>
         
         <div className="partidos-list">
-          {partidos.map((partido) => (
-            <div key={partido.id_api} className="partido-card">
-              
-              {/* Información del Partido */}
-              <div className="partido-info">
-                <div className="partido-fecha">{formatearFecha(partido.fecha)}</div>
-                <div className="partido-equipos">
-                  <span>{partido.equipo_1}</span>
-                  <span className="vs-text">vs</span>
-                  <span>{partido.equipo_2}</span>
-                </div>
-              </div>
+          {partidos.map((partido) => {
+            // Buscamos si existe un voto guardado para este partido en particular
+            const miVoto = pronosticos.find(p => p.partido_id === partido.id_api)
 
-              {/* Casilleros para arriesgar el Prode (inputs mockeados por ahora) */}
-              <div className="partido-voto">
-                <div className="voto-inputs">
-                  <input type="number" min="0" placeholder="0" className="input-goles" />
-                  <span className="vs-text">-</span>
-                  <input type="number" min="0" placeholder="0" className="input-goles" />
-                </div>
-                <button className="btn-guardar">Votar</button>
-              </div>
-
-            </div>
-          ))}
+            return (
+              <PartidoCard 
+                key={partido.id_api} 
+                partido={partido} 
+                userId={userId} 
+                votoInicial={miVoto} // <-- Le pasamos el voto inicial si existe
+                formatearFecha={formatearFecha} 
+              />
+            )
+          })}
         </div>
       </main>
     </div>
