@@ -19,9 +19,11 @@ export default function PartidoCard({
   const [goles1, setGoles1] = useState("");
   const [goles2, setGoles2] = useState("");
 
+  const [equipoAvanza, setEquipoAvanza] = useState(null);
+
   const [guardando, setGuardando] = useState(false);
 
-  const [golesGuardados, setGolesGuardados] = useState(
+  const [votoGuardado, setVotoGuardado] = useState(
     votoInicial
       ? {
           g1: votoInicial.goles_pronostico_1.toString(),
@@ -34,18 +36,31 @@ export default function PartidoCard({
     if (votoInicial) {
       setGoles1(votoInicial.goles_pronostico_1.toString());
       setGoles2(votoInicial.goles_pronostico_2.toString());
-      setGolesGuardados({
+      setVotoGuardado({
         g1: votoInicial.goles_pronostico_1.toString(),
         g2: votoInicial.goles_pronostico_2.toString(),
+        avanza: votoInicial.equipo_avanza_pronostico,
       });
     }
   }, [votoInicial]);
 
+  const esEliminatoria = partido.instancia !== "GROUP_STAGE";
+  const esEmpateEnInputs = goles1 !== "" && goles2 !== "" && goles1 === goles2;
+  const requierePenales = esEliminatoria && esEmpateEnInputs;
+
+  // Si cambia el marcador y deja de ser empate, reseteamos el clasificado
+  useEffect(() => {
+    if (!esEmpateEnInputs) {
+      setEquipoAvanza(null);
+    }
+  }, [goles1, goles2, esEmpateEnInputs]);
+
   // El botón se muestra verde SÓLO si hay un voto guardado Y coincide exactamente con los inputs actuales
   const esVotoIdenticoAGuardado =
-    golesGuardados !== null &&
-    goles1 === golesGuardados.g1 &&
-    goles2 === golesGuardados.g2;
+    votoGuardado !== null &&
+    goles1 === votoGuardado.g1 &&
+    goles2 === votoGuardado.g2 &&
+    equipoAvanza === votoGuardado.avanza;
 
   const handleVotar = async () => {
     if (!userId) {
@@ -55,6 +70,14 @@ export default function PartidoCard({
 
     if (goles1 === "" || goles2 === "") {
       alert("Por favor, ingresá los goles de ambos equipos para votar.");
+      return;
+    }
+
+    // Validar que si hay penales, hayan elegido un ganador
+    if (requierePenales && !equipoAvanza) {
+      alert(
+        "El partido es de eliminación directa. Elegí quién avanza por penales.",
+      );
       return;
     }
 
@@ -75,7 +98,7 @@ export default function PartidoCard({
       if (error) throw error;
 
       // Actualizamos nuestro estado de "guardados" para que el botón pase a verde
-      setGolesGuardados({ g1: goles1, g2: goles2 });
+      setVotoGuardado({ g1: goles1, g2: goles2, avanza: equipoAvanza });
     } catch (error) {
       console.error("Error al guardar el pronóstico:", error);
       alert("No se pudo guardar tu voto. Revisá la consola.");
@@ -98,11 +121,47 @@ export default function PartidoCard({
 
         {/* 2. Nombre de los equipos e indicador vs */}
         <div className="partido-equipos">
-          <span>{partido.equipo_1}</span>
+          <span
+            className={
+              equipoAvanza === partido.equipo_1 ? "ganador-resaltado" : ""
+            }
+          >
+            {partido.equipo_1}
+          </span>
           <span className="vs-text">vs</span>
-          <span>{partido.equipo_2}</span>
+          <span
+            className={
+              equipoAvanza === partido.equipo_2 ? "ganador-resaltado" : ""
+            }
+          >
+            {partido.equipo_2}
+          </span>
         </div>
       </div>
+
+      {requierePenales && (
+        <div className="seccion-penales">
+          <p className="penales-titulo">¿Quién pasa por penales?</p>
+          <div className="penales-botones">
+            <button
+              type="button"
+              className={`btn-penal ${equipoAvanza === partido.equipo_1 ? "selected" : ""}`}
+              onClick={() => setEquipoAvanza(partido.equipo_1)}
+              disabled={guardando}
+            >
+              {partido.equipo_1}
+            </button>
+            <button
+              type="button"
+              className={`btn-penal ${equipoAvanza === partido.equipo_2 ? "selected" : ""}`}
+              onClick={() => setEquipoAvanza(partido.equipo_2)}
+              disabled={guardando}
+            >
+              {partido.equipo_2}
+            </button>
+          </div>
+        </div>
+      )}
 
       <div className="partido-voto">
         <div className="voto-inputs">

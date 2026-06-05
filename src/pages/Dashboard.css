@@ -259,3 +259,58 @@
     padding: 0;
   }
 }
+
+/* Contenedor central de penales */
+.seccion-penales {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin: 10px 0;
+  padding: 8px;
+  background-color: #f9f9f9;
+  border-radius: 6px;
+  border: 1px dashed #ccc;
+}
+
+.penales-titulo {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #555;
+  margin-bottom: 6px;
+}
+
+.penales-botones {
+  display: flex;
+  gap: 10px;
+}
+
+/* Botones para elegir equipo */
+.btn-penal {
+  padding: 6px 12px;
+  font-size: 0.85rem;
+  border: 1px solid #2196f3;
+  background-color: white;
+  color: #2196f3;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-penal:hover {
+  background-color: #e3f2fd;
+}
+
+/* Estado seleccionado */
+.btn-penal.selected {
+  background-color: #2196f3;
+  color: white;
+  font-weight: bold;
+  box-shadow: 0 2px 4px rgba(33, 150, 243, 0.3);
+}
+
+/* Resaltar visualmente el nombre del equipo en la tarjeta */
+.ganador-resaltado {
+  font-weight: bold;
+  color: #2196f3;
+  text-decoration: underline;
+}
