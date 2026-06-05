@@ -19,13 +19,12 @@ def simular_datos_prode():
     
     # Para este ejemplo, asumimos que conseguiste los 3 IDs que ya pasaron por Auth:
     usuarios_prueba = [
-        {"id": user_coti, "username": "Coti"},
-        {"id": user_vale, "username": "Vale"},
-        {"id": user_guada, "username": "Guada"}
+        {"id": user_coti, "username": "Coti", "campeon_prediccion": "Argentina", "subcampeon_prediccion": "Alemania"},
+        {"id": user_vale, "username": "Vale", "campeon_prediccion": "Brasil", "subcampeon_prediccion": "Francia"},
+        {"id": user_guada, "username": "Guada", "campeon_prediccion": "Alemania", "subcampeon_prediccion": "España"}
     ]
-    print("Inserting usuarios...")
+    print("Inserting usuarios con predicciones a largo plazo...")
     supabase.table("profiles").upsert(usuarios_prueba, on_conflict="id").execute()
-
     # -------------------------------------------------------------------------
     # 📅 2. INSERTAR PARTIDOS DE PRUEBA
     # -------------------------------------------------------------------------
@@ -145,6 +144,9 @@ def simular_datos_prode():
     print("Inserting pronósticos...")
     supabase.table("pronosticos").upsert(pronosticos_prueba, on_conflict="user_id,partido_id").execute()
 
+    print("Simulando cierre del torneo...")
+    supabase.table("constantes_torneo").upsert({"id": 1, "campeon_real": "Argentina", "subcampeon_real": "Francia"}).execute()
+    
     print("✨ ¡Simulación completada con éxito!")
 
 if __name__ == "__main__":

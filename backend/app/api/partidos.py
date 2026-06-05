@@ -107,11 +107,12 @@ def obtener_tabla_posiciones():
         partidos = supabase.table("partidos").select("*").eq("estado", "FINISHED").execute().data
         partidos_dict = {p["id_api"]: p for p in partidos}
 
-        # B. Traer la bolsa completa de pronósticos de la base
         pronosticos = supabase.table("pronosticos").select("*").execute().data
-        
-        # C. Traer todos los perfiles de usuarios (para mostrar el username real)
         usuarios = supabase.table("profiles").select("id, username").execute().data
+        
+        constantes = supabase.table("constantes_torneo").select("*").eq("id", 1).single().execute().data
+        campeon_real = constantes.get("campeon_real") if constantes else None
+        subcampeon_real = constantes.get("subcampeon_real") if constantes else None
 
         # D. Inicializar el acumulador en el diccionario
         ranking = {u["id"]: {"username": u["username"], "puntos": 0} for u in usuarios}
@@ -137,7 +138,23 @@ def obtener_tabla_posiciones():
             )
             ranking[u_id]["puntos"] += puntos
 
-        # F. Ordenar la tabla definitiva de mayor a menor según sus puntos
+        # F. Cómputo 2: Puntos por Campeón (+6) y Subcampeón (+3)
+        # Solo se calculan si ya cargaste los resultados reales en la bdd
+        if campeon_real or subcampeon_real:
+            for u in usuarios:
+                u_id = u["id"]
+                if u_id not in ranking:
+                    continue
+                
+                # Check Campeón (+6 pts)
+                if campeon_real and u.get("campeon_prediccion") == campeon_real:
+                    ranking[u_id]["puntos"] += 10
+                    
+                # Check Subcampeón (+3 pts)
+                if subcampeon_real and u.get("subcampeon_prediccion") == subcampeon_real:
+                    ranking[u_id]["puntos"] += 5
+
+        # G. Ordenar la tabla definitiva de mayor a menor según sus puntos
         ranking_ordenado = sorted(ranking.values(), key=lambda x: x["puntos"], reverse=True)
 
         return {"status": "success", "data": ranking_ordenado}
@@ -145,3 +162,4 @@ def obtener_tabla_posiciones():
     except Exception as e:
         print(f"❌ Error en obtener_tabla_posiciones: {e}")
         raise HTTPException(status_code=500, detail=f"Error al procesar el ranking de posiciones: {str(e)}")
+    
