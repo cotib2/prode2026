@@ -30,25 +30,34 @@ export default function TablaPuntos() {
           .eq("id", user.id)
           .single();
 
-        if (profileData) setUsername(profileData.username);
+        let nombreUsuarioActual = "";
+        if (profileData) {
+          setUsername(profileData.username);
+          nombreUsuarioActual = profileData.username;
+        }
 
-        // Pedido a Supabase para traer los puntos
-        /* const { data: tablaData, error } = await supabase
-        .from('puntajes_usuarios')
-        .select('username, puntos')
-        .order('puntos', { ascending: false });
-        */
+        // PEDIDO REAL AL BACKEND
+        const response = await fetch(
+          "https://prode2026-8lxe.onrender.com/api/partidos/tabla-posiciones",
+        );
+        const result = await response.json();
 
-        // C. DATOS DE PRUEBA (Para ver cómo va quedando el diseño en el celu antes de armar la tabla real)
-        const datosFicticios = [
-          { username: "Coti (Vos)", puntos: 12 },
-          { username: "Juani99", puntos: 9 },
-          { username: "Messi_10", puntos: 6 },
-          { username: "Santi_Dev", puntos: 3 },
-        ];
-        setRanking(datosFicticios);
+        if (result.status === "success" && result.data) {
+          // Mapeamos los datos para agregar el "(Vos)" al usuario que está mirando la pantalla
+          const rankingProcesado = result.data.map((jugador) => {
+            if (jugador.username === nombreUsuarioActual) {
+              return {
+                ...jugador,
+                username: `${jugador.username} (Vos)`,
+              };
+            }
+            return jugador;
+          });
+
+          setRanking(rankingProcesado);
+        }
       } catch (error) {
-        console.error("Error cargando datos de la tabla:", error);
+        console.error("Error cargando datos de la tabla real:", error);
       } finally {
         setLoading(false);
       }
@@ -57,10 +66,28 @@ export default function TablaPuntos() {
     cargarDatosTabla();
   }, [navigate]);
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
     localStorage.clear();
     navigate("/login");
   };
+
+  if (loading) {
+    return (
+      <div className="dashboard-container">
+        <p
+          style={{
+            color: "#4b5563",
+            textAlign: "center",
+            marginTop: "40px",
+            fontWeight: "600",
+          }}
+        >
+          Calculando puntajes en tiempo real... 📊
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="dashboard-container">
@@ -122,9 +149,6 @@ export default function TablaPuntos() {
                   <tr
                     key={index}
                     className={esUsuarioActual ? "fila-usuario-actual" : ""}
-                    style={
-                      esUsuarioActual ? { backgroundColor: "#eff6ff" } : {}
-                    }
                   >
                     <td className="posicion-cell">{index + 1}°</td>
                     <td className="username-cell">{jugador.username}</td>
