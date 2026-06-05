@@ -142,7 +142,7 @@ def obtener_tabla_posiciones():
             )
             ranking[u_id]["puntos"] += puntos
 
-        # F. Cómputo 2: Puntos por Campeón (+6) y Subcampeón (+3)
+        # F. Cómputo 2: Puntos por Campeón (+10) y Subcampeón (+g)
         # Solo se calculan si ya cargaste los resultados reales en la bdd
       
         for u in usuarios:
@@ -151,14 +151,21 @@ def obtener_tabla_posiciones():
                 continue
             
             # Sumamos Campeón si hay coincidencia
+            print(f"Usuario: {u['username']} | Diccionario completo: {u}")
+            print(f"  > Lo que lee de campeon_prediccion: '{u.get('campeon_prediccion')}'")
+            print(f"  > Lo que lee de subcampeon_prediccion: '{u.get('subcampeon_prediccion')}'")
+            
+            # Sumamos Campeón si hay coincidencia
             if campeon_real and u.get("campeon_prediccion") == campeon_real:
+                print(f"  ¡¡Suma 6 puntos a {u['username']}!!")
                 ranking[u_id]["puntos"] += 10
                 
             # Sumamos Subcampeón si hay coincidencia
             if subcampeon_real and u.get("subcampeon_prediccion") == subcampeon_real:
+                print(f"  ¡¡Suma 3 puntos a {u['username']}!!")
                 ranking[u_id]["puntos"] += 5
 
-                
+
         # G. Ordenar la tabla definitiva de mayor a menor según sus puntos
         ranking_ordenado = sorted(ranking.values(), key=lambda x: x["puntos"], reverse=True)
 
