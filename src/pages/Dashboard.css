@@ -2,14 +2,17 @@
   width: 100%;
   max-width: 600px;
   margin: 0 auto;
-  padding: 16px 16px 0 16px; /* Sacamos el padding-bottom para que no desfase abajo */
-  font-family: sans-serif;
-  color: #fff;
-  background-color: #121212;
-  height: 100vh; /* Forzamos a que ocupe exactamente el alto de la pantalla */
+  padding: 16px 16px 0 16px;
+  font-family:
+    system-ui,
+    -apple-system,
+    sans-serif;
+  color: #1f2937; /* Gris oscuro premium (reemplaza al blanco) */
+  background-color: #f9fafb; /* Fondo gris ultra claro (reemplaza al negro #121212) */
+  height: 100dvh;
   display: flex;
   flex-direction: column;
-  overflow: hidden; /* Clava la pantalla al piso, evita el rebote general en celulares */
+  overflow: hidden;
   box-sizing: border-box;
 }
 
@@ -17,7 +20,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  border-bottom: 1px solid #222;
+  border-bottom: 1px solid #e5e7eb; /* Línea divisoria sutil */
   padding-bottom: 16px;
   margin-bottom: 16px;
   flex-shrink: 0;
@@ -25,48 +28,53 @@
 
 /* Botones de navegación con emojis */
 .btn-nav {
-  background: #222;
-  border: 1px solid #333;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
   font-size: 18px;
   padding: 6px 10px;
-  border-radius: 6px;
+  border-radius: 8px;
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
-/* Efecto cuando estás parado en esa página */
+/* Efecto cuando estás parada en esa página (Toque Azul Moderno) */
 .btn-nav.active {
-  background-color: #121212;
-  border-color: #4caf50; /* Color verde como tu username */
-  box-shadow: 0 0 5px rgba(76, 175, 80, 0.3);
+  background-color: #eff6ff; /* Fondo azul sutil */
+  border-color: #3b82f6; /* Azul destacado */
+  box-shadow: 0 0 5px rgba(59, 130, 246, 0.15);
 }
 
-/* Renombramos tu botón de logout para que combine en tamaño */
+/* Botón de logout sutil pero claro */
 .btn-logout {
   padding: 8px 12px;
-  background-color: #e53935;
-  color: white;
-  border: none;
-  border-radius: 6px;
-  font-weight: bold;
+  background-color: #fef2f2; /* Fondo rojo ultra suave */
+  color: #dc2626; /* Texto rojo */
+  border: 1px solid #fee2e2;
+  border-radius: 8px;
+  font-weight: 600;
   font-size: 13px;
   cursor: pointer;
-  height: 34px; /* Forzamos altura para emparejar con los iconos */
+  height: 34px;
   display: flex;
   align-items: center;
+  transition: all 0.2s ease;
+}
+
+.btn-logout:hover {
+  background-color: #fee2e2;
 }
 
 .header-actions {
   display: flex;
   align-items: center;
-  gap: 10px; /* Separación entre los iconos y el botón de salir */
+  gap: 10px;
 }
 
 .dashboard-main-scroll {
   flex: 1;
-  height: calc(100vh - 100px); 
+  /* height: calc(100vh - 100px); */
   overflow-y: auto;
-  padding-bottom: 20px; /* Padding tranqui estándar */
+  padding-bottom: 20px;
   box-sizing: border-box;
   -webkit-overflow-scrolling: touch;
 }
@@ -74,17 +82,22 @@
 .welcome-text {
   margin: 0;
   font-size: 20px;
+  font-weight: 700;
 }
 
 .username-highlight {
-  color: #4caf50;
+  color: #2563eb; /* Tu username ahora destaca en azul Prode */
 }
 
 .fixture-title {
   margin-bottom: 16px;
-  font-size: 18px;
-  border-left: 4px solid #2196f3;
+  font-size: 16px;
+  font-weight: 700;
+  color: #4b5563;
+  border-left: 4px solid #3b82f6; /* Detalle en azul */
   padding-left: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 .partidos-list {
@@ -93,15 +106,24 @@
   gap: 12px;
 }
 
-/* Tarjeta responsiva: Columna en mobile, fila en desktop */
+/* ==========================================================================
+   📦 PARTE 2: TARJETA DE PARTIDO (Se puede dejar acá o mover a PartidoCard.css)
+   ========================================================================== */
+
 .partido-card {
-  background-color: #1e1e1e;
-  border: 1px solid #2c2c2c;
-  border-radius: 10px;
-  padding: 14px;
+  background-color: #ffffff;
+  border: 1px solid #e5e7eb; /* Borde fino y sutil */
+  border-radius: 12px;
+  padding: 16px;
   display: flex;
-  flex-direction: column; /* Mobile first: un elemento abajo del otro */
+  flex-direction: column;
   gap: 12px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02); /* Sombra casi invisible */
+  transition: box-shadow 0.2s ease;
+}
+
+.partido-card:hover {
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.04); /* Un toque de relieve al pasar el mouse */
 }
 
 .partido-info {
@@ -109,33 +131,50 @@
 }
 
 .partido-fecha {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start; /* 🚀 Alinea todo al inicio (izquierda) */
+  gap: 8px;
   font-size: 11px;
-  color: #888;
+  color: #9ca3af; /* Gris claro secundario */
+  font-weight: 500;
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  margin-bottom: 4px;
+  margin-bottom: 6px;
+}
+
+/* Tag especial para la instancia (Ej: GROUP STAGE) */
+.instancia-tag {
+  font-size: 10px;
+  font-weight: 700;
+  color: #2563eb;
+  background-color: #eff6ff;
+  padding: 2px 6px;
+  border-radius: 4px;
+  margin-right: 8px;
 }
 
 .partido-equipos {
   display: flex;
   align-items: center;
   gap: 10px;
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 600;
+  color: #1f2937;
 }
 
 .vs-text {
-  color: #666;
-  font-size: 13px;
-  font-weight: normal;
+  color: #9ca3af;
+  font-size: 12px;
+  font-weight: 400;
 }
 
-/* Zona de votación: Ocupa todo el ancho en mobile */
+/* Zona de votación */
 .partido-voto {
   display: flex;
   align-items: center;
-  justify-content: space-between; /* Distribuye inputs y botón en los extremos */
-  background-color: #262626;
+  justify-content: space-between;
+  background-color: #f3f4f6; /* Fondo gris claro sutil */
   padding: 8px 12px;
   border-radius: 8px;
   gap: 8px;
@@ -144,23 +183,23 @@
 .voto-inputs {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
 }
 
-/* Inputs grandes para que sea un placer tocar con el dedo */
+/* Inputs minimalistas estilizados */
 .input-goles {
-  width: 48px;
-  height: 38px;
+  width: 44px;
+  height: 36px;
   text-align: center;
   font-size: 16px;
-  font-weight: bold;
-  background-color: #121212;
-  color: #fff;
-  border: 1px solid #444;
+  font-weight: 700;
+  background-color: #ffffff;
+  color: #111827;
+  border: 1px solid #d1d5db;
   border-radius: 6px;
+  transition: all 0.15s ease;
 }
 
-/* Saca las flechitas nativas de los inputs numéricos en Chrome/Safari */
 .input-goles::-webkit-outer-spin-button,
 .input-goles::-webkit-inner-spin-button {
   -webkit-appearance: none;
@@ -169,30 +208,47 @@
 
 .input-goles:focus {
   outline: none;
-  border-color: #2196f3;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
+/* Botón Guardar */
 .btn-guardar {
-  flex: 1; /* El botón ocupa el espacio sobrante a la derecha */
+  flex: 1;
   max-width: 120px;
-  height: 38px;
-  background-color: #2196f3;
+  height: 36px;
+  background-color: #2563eb; /* Azul premium */
   color: white;
   border: none;
   border-radius: 6px;
-  font-weight: bold;
-  font-size: 14px;
+  font-weight: 600;
+  font-size: 13px;
   cursor: pointer;
+  transition: background-color 0.15s ease;
 }
 
-/* --- MEDIA QUERY PARA PANTALLAS MEDIANAS/GRANDES --- */
+.btn-guardar:hover {
+  background-color: #1d4ed8;
+}
+
+/* Label cuando el partido está finalizado */
+.partido-finalizado {
+  font-size: 12px;
+  font-weight: 600;
+  color: #dc2626; /* Rojo destacado sutil */
+  background-color: #fef2f2; /* Fondo rojo clarito */
+  padding: 6px 12px;
+  border-radius: 6px;
+}
+
+/* --- MEDIA QUERY REAJUSTADA PARA EL LOOK CLARO --- */
 @media (min-width: 480px) {
   .partido-card {
-    flex-direction: row; /* En tablets o compus vuelve a formato fila */
+    flex-direction: row;
     justify-content: space-between;
     align-items: center;
   }
-  
+
   .partido-info {
     flex: 1;
   }

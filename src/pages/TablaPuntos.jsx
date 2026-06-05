@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "../lib/supabaseClient";
+import "./TablaPuntos.css";
 
 export default function TablaPuntos() {
   const navigate = useNavigate();
@@ -70,18 +71,31 @@ export default function TablaPuntos() {
         </h1>
 
         <div className="header-actions">
+          {/* Botón Dashboard */}
           <button
             onClick={() => navigate("/dashboard")}
             className={`btn-nav ${location.pathname === "/dashboard" ? "active" : ""}`}
           >
             📅
           </button>
+
+          {/* Botón Tabla */}
           <button
             onClick={() => navigate("/tabla")}
             className={`btn-nav ${location.pathname === "/tabla" ? "active" : ""}`}
           >
             📊
           </button>
+
+          {/* Botón Campeon */}
+          <button
+            onClick={() => navigate("/campeon")}
+            className={`btn-nav ${location.pathname === "/campeon" ? "active" : ""}`}
+            title="Votar Campeón"
+          >
+            🏆
+          </button>
+
           <button onClick={handleLogout} className="btn-logout">
             Salir
           </button>
@@ -91,37 +105,35 @@ export default function TablaPuntos() {
       <main className="dashboard-main-scroll">
         <h2 className="fixture-title">Tabla de Posiciones</h2>
 
-        <div
-          className="tabla-usuarios"
-          style={{
-            display: "flex",
-            flexDirection: "column",
-            gap: "8px",
-            marginTop: "16px",
-          }}
-        >
-          {ranking.map((jugador, index) => (
-            <div
-              key={index}
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                backgroundColor: "#1e1e1e",
-                padding: "12px 16px",
-                borderRadius: "8px",
-                border: jugador.username.includes("(Vos)")
-                  ? "1px solid #4caf50"
-                  : "1px solid #2c2c2c",
-              }}
-            >
-              <span>
-                {index + 1}° {jugador.username}
-              </span>
-              <span style={{ fontWeight: "bold", color: "#00d2c4" }}>
-                {jugador.puntos} pts
-              </span>
-            </div>
-          ))}
+        <div className="tabla-container">
+          <table className="prode-tabla">
+            <thead>
+              <tr>
+                <th>Pos</th>
+                <th>Usuario</th>
+                <th>Puntos</th>
+              </tr>
+            </thead>
+            <tbody>
+              {ranking.map((jugador, index) => {
+                const esUsuarioActual = jugador.username.includes("(Vos)");
+
+                return (
+                  <tr
+                    key={index}
+                    className={esUsuarioActual ? "fila-usuario-actual" : ""}
+                    style={
+                      esUsuarioActual ? { backgroundColor: "#eff6ff" } : {}
+                    }
+                  >
+                    <td className="posicion-cell">{index + 1}°</td>
+                    <td className="username-cell">{jugador.username}</td>
+                    <td className="puntos-cell">{jugador.puntos} pts</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
         </div>
       </main>
     </div>

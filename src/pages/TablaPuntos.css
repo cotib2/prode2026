@@ -1,0 +1,77 @@
+.tabla-container {
+  width: 100%;
+  background-color: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
+  margin-top: 10px;
+}
+
+.prode-tabla {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  font-size: 14px;
+}
+
+.prode-tabla th {
+  background-color: #f8fafc;
+  color: #64748b;
+  font-weight: 600;
+  padding: 12px 16px;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.prode-tabla td {
+  padding: 14px 16px;
+  color: #334155;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+/* Fila interactiva al pasar el mouse */
+.prode-tabla tbody tr:hover {
+  background-color: #f8fafc;
+}
+
+/* Destacar la posición de los tres primeros (Podio) */
+.posicion-cell {
+  font-weight: 700;
+  width: 40px;
+  color: #64748b;
+}
+
+.prode-tabla tbody tr:nth-child(1) .posicion-cell {
+  color: #d97706;
+} /* Oro sutil */
+.prode-tabla tbody tr:nth-child(2) .posicion-cell {
+  color: #475569;
+} /* Plata sutil */
+.prode-tabla tbody tr:nth-child(3) .posicion-cell {
+  color: #b45309;
+} /* Bronce sutil */
+
+.username-cell {
+  font-weight: 600;
+  color: #1e293b;
+}
+
+/* Columna de puntos en negrita destacada a la derecha */
+.puntos-cell {
+  font-weight: 700;
+  color: #2563eb; /* Azul para resaltar los puntos del líder */
+  text-align: right;
+}
+
+.prode-tabla th:last-child {
+  text-align: right;
+}
+
+/* Destaca la fila del usuario logueado de forma sutil */
+.prode-tabla tbody tr.fila-usuario-actual td {
+  background-color: #eff6ff !important; /* Fondo azul sutil */
+  color: #1e40af !important; /* Texto un toque más azul oscuro */
+}
