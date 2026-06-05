@@ -108,7 +108,7 @@ def obtener_tabla_posiciones():
         partidos_dict = {p["id_api"]: p for p in partidos}
 
         pronosticos = supabase.table("pronosticos").select("*").execute().data
-        usuarios = supabase.table("profiles").select("id, username").execute().data
+        usuarios = supabase.table("profiles").select("id, username, campeon_prediccion, subcampeon_prediccion").execute().data
         
         constantes_res = supabase.table("constantes_torneo").select("campeon_real, subcampeon_real").eq("id", 1).execute()
         campeon_real = None
@@ -157,12 +157,12 @@ def obtener_tabla_posiciones():
             
             # Sumamos Campeón si hay coincidencia
             if campeon_real and u.get("campeon_prediccion") == campeon_real:
-                print(f"  ¡¡Suma 6 puntos a {u['username']}!!")
+                print(f"  ¡¡Suma 10 puntos a {u['username']}!!")
                 ranking[u_id]["puntos"] += 10
                 
             # Sumamos Subcampeón si hay coincidencia
             if subcampeon_real and u.get("subcampeon_prediccion") == subcampeon_real:
-                print(f"  ¡¡Suma 3 puntos a {u['username']}!!")
+                print(f"  ¡¡Suma 5 puntos a {u['username']}!!")
                 ranking[u_id]["puntos"] += 5
 
 
