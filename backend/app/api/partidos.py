@@ -110,9 +110,13 @@ def obtener_tabla_posiciones():
         pronosticos = supabase.table("pronosticos").select("*").execute().data
         usuarios = supabase.table("profiles").select("id, username").execute().data
         
-        constantes = supabase.table("constantes_torneo").select("*").eq("id", 1).single().execute().data
-        campeon_real = constantes.get("campeon_real") if constantes else None
-        subcampeon_real = constantes.get("subcampeon_real") if constantes else None
+        constantes_res = supabase.table("constantes_torneo").select("campeon_real, subcampeon_real").eq("id", 1).execute()
+        campeon_real = None
+        subcampeon_real = None
+
+        if constantes_res.data and len(constantes_res.data) > 0:
+            campeon_real = constantes_res.data[0].get("campeon_real")
+            subcampeon_real = constantes_res.data[0].get("subcampeon_real")
 
         # D. Inicializar el acumulador en el diccionario
         ranking = {u["id"]: {"username": u["username"], "puntos": 0} for u in usuarios}
@@ -140,20 +144,21 @@ def obtener_tabla_posiciones():
 
         # F. Cómputo 2: Puntos por Campeón (+6) y Subcampeón (+3)
         # Solo se calculan si ya cargaste los resultados reales en la bdd
-        if campeon_real or subcampeon_real:
-            for u in usuarios:
-                u_id = u["id"]
-                if u_id not in ranking:
-                    continue
+      
+        for u in usuarios:
+            u_id = u["id"]
+            if u_id not in ranking:
+                continue
+            
+            # Sumamos Campeón si hay coincidencia
+            if campeon_real and u.get("campeon_prediccion") == campeon_real:
+                ranking[u_id]["puntos"] += 10
                 
-                # Check Campeón (+6 pts)
-                if campeon_real and u.get("campeon_prediccion") == campeon_real:
-                    ranking[u_id]["puntos"] += 10
-                    
-                # Check Subcampeón (+3 pts)
-                if subcampeon_real and u.get("subcampeon_prediccion") == subcampeon_real:
-                    ranking[u_id]["puntos"] += 5
+            # Sumamos Subcampeón si hay coincidencia
+            if subcampeon_real and u.get("subcampeon_prediccion") == subcampeon_real:
+                ranking[u_id]["puntos"] += 5
 
+                
         # G. Ordenar la tabla definitiva de mayor a menor según sus puntos
         ranking_ordenado = sorted(ranking.values(), key=lambda x: x["puntos"], reverse=True)
 
