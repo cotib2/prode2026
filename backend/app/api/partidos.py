@@ -215,7 +215,7 @@ def obtener_tabla_posiciones():
         raise HTTPException(status_code=500, detail=f"Error al procesar el ranking de posiciones: {str(e)}")
     
 
-@router.get("{partido_id}/pronosticos-grupo")
+@router.get("/{partido_id}/pronosticos-grupo")
 def obtener_pronosticos_grupo(partido_id: int):
     """
     Devuelve los pronósticos de todos los usuarios para un partido específico,
