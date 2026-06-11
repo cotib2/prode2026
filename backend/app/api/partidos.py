@@ -238,7 +238,7 @@ def obtener_pronosticos_grupo(partido_id: int):
                 "username": profile.get("username", "Anon"),
                 "g1": item.get("goles_pronostico_1"),
                 "g2": item.get("goles_pronostico_2"),
-                "avanza": item.get("equipo_avanza_pronostico")
+                "avanza": item.get("gana_penales_pronostico")
             })
             
         return {"status": "success", "data": votos}
