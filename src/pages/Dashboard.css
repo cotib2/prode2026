@@ -423,7 +423,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 6px 0;
+  padding: 8px 0;
   border-bottom: 1px dashed #f3f4f6;
   font-size: 13px;
 }
@@ -435,19 +435,33 @@
 .grupo-username {
   font-weight: 500;
   color: #374151;
+  flex-shrink: 0;
+}
+
+.grupo-valores-derecha {
+  margin-left: auto; /* Empuja todo este bloque hacia el extremo derecho */
+  display: flex;
+  align-items: center;
+  gap: 12px; /* Espacio de separación entre la cajita de goles y los puntos */
 }
 
 .grupo-prediccion {
   font-weight: 700;
   color: #111827;
-  background-color: #f9fafb;
-  padding: 2px 8px;
-  border-radius: 4px;
+  background-color: #f3f4f6;
+  padding: 4px 10px;
+  border-radius: 6px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 45px; /* Le da un ancho fijo para que los guiones queden simétricos */
+  text-align: center;
 }
 
 .grupo-prediccion small {
   font-weight: 400;
   color: #6b7280;
+  margin-left: 4px;
 }
 
 /* Badges de puntuaciones */

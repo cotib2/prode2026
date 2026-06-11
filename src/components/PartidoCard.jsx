@@ -15,37 +15,76 @@ const TRADUCCIONES_INSTANCIAS = {
 function calcularPuntosEspejo(prono, partido) {
   if (partido.estado !== "FINISHED") return null; // No hay puntos si no terminó
 
-  const gReal1 = partido.goles_real_1;
-  const gReal2 = partido.goles_real_2;
-  const rAvanza = partido.equipo_avanza_real;
+  // Desestructuramos y casteamos a los tipos correctos para evitar problemas de tipos
+  const real1 = partido.goles_real_1;
+  const real2 = partido.goles_real_2;
+  const rAvanza = partido.equipo_avanza_real; // 🚨 Asegurate que en tu objeto partido se llame así
+  const instancia = partido.instancia;
 
-  const pG1 = prono.g1;
-  const pG2 = prono.g2;
+  const prono1 =
+    prono.g1 !== null && prono.g1 !== undefined ? parseInt(prono.g1) : null;
+  const prono2 =
+    prono.g2 !== null && prono.g2 !== undefined ? parseInt(prono.g2) : null;
   const pAvanza = prono.avanza;
 
-  const aciertoGoles1 = gReal1 === pG1;
-  const aciertoGoles2 = gReal2 === pG2;
-  const aciertoGanador = Math.sign(gReal1 - gReal2) === Math.sign(pG1 - pG2);
-
-  const esEliminatoria = partido.instancia !== "GROUP_STAGE";
-
-  if (esEliminatoria) {
-    const aciertoAvanza = rAvanza === pAvanza;
-    // Pleno absoluto en playoffs
-    if (aciertoGoles1 && aciertoGoles2 && aciertoAvanza) return 9;
-    // Acertó goles pero le erró al penal (solo pasa en empates)
-    if (aciertoGoles1 && aciertoGoles2 && !aciertoAvanza) return 3;
-    // Acertó tendencia + penal
-    if (aciertoGanador && aciertoAvanza) return 6;
-    // Acertó solo el que avanza por penales sin pegar la tendencia
-    if (!aciertoGanador && aciertoAvanza) return 3;
-    return 0;
-  } else {
-    // Fase de grupos tradicional
-    if (aciertoGoles1 && aciertoGoles2) return 5;
-    if (aciertoGanador) return 2;
+  // Validación de nulos espejo de Python
+  if (prono1 === null || prono2 === null || real1 === null || real2 === null) {
     return 0;
   }
+
+  // Determinar tendencias de los 90 minutos (Espejo de Python)
+  // 1 = Gana equipo 1, -1 = Gana equipo 2, 0 = Empate
+  const tReal = real1 > real2 ? 1 : real1 < real2 ? -1 : 0;
+  const tProno = prono1 > prono2 ? 1 : prono1 < prono2 ? -1 : 0;
+
+  // -------------------------------------------------------------------------
+  // ESCENARIO 1: EMPATE EN LOS 90 MINUTOS
+  // -------------------------------------------------------------------------
+  if (tReal === 0) {
+    if (tProno !== 0) {
+      return 0; // Erró la tendencia principal de empate
+    }
+
+    // A. Empate en Fase de Grupos
+    if (instancia === "GROUP_STAGE") {
+      if (prono1 === real1) {
+        return 6; // Empate exacto
+      }
+      return 3; // Empate no exacto
+    }
+    // B. Empate en Eliminación Directa (Entran los penales)
+    else {
+      const esExacto = prono1 === real1;
+      const acertoPenales =
+        pAvanza === rAvanza && rAvanza !== null && rAvanza !== undefined;
+
+      if (esExacto && acertoPenales) return 9; // Empate exacto + ganador penales
+      if (esExacto && !acertoPenales) return 6; // Empate exacto sin ganador penales
+      if (!esExacto && acertoPenales) return 6; // Empate no exacto + ganador penales
+      if (!esExacto && !acertoPenales) return 3; // Empate no exacto y sin ganador penales
+    }
+  }
+  // -------------------------------------------------------------------------
+  // ESCENARIO 2: HUBO UN GANADOR EN LOS 90 MINUTOS
+  // -------------------------------------------------------------------------
+  else {
+    if (tReal === tProno) {
+      if (prono1 === real1 && prono2 === real2) {
+        return 6; // Marcador exacto
+      }
+      if (prono1 === real1 || prono2 === real2) {
+        return 4; // Resultado parcial (Ganador + goles exactos de un equipo)
+      }
+      return 3; // Ganador correcto simple
+    } else {
+      if (prono1 === real1 || prono2 === real2) {
+        return 1; // Goles de un equipo correcto (Consuelo)
+      }
+      return 0;
+    }
+  }
+
+  return 0;
 }
 
 export default function PartidoCard({
@@ -191,7 +230,14 @@ export default function PartidoCard({
       );
       const json = await res.json();
       if (json.status === "success") {
-        setVotosGrupo(json.data);
+        const votosOrdenados = json.data.sort((a, b) => {
+          const puntosA = calcularPuntosEspejo(a, partido) || 0;
+          const puntosB = calcularPuntosEspejo(b, partido) || 0;
+
+          return puntosB - puntosA; // Mayor a menor
+        });
+
+        setVotosGrupo(votosOrdenados);
       }
     } catch (error) {
       console.error("Error trayendo votos del grupo:", error);
@@ -331,17 +377,19 @@ export default function PartidoCard({
                 return (
                   <div key={v.user_id} className="fila-voto-grupo">
                     <span className="grupo-username">👤 {v.username}</span>
-                    <span className="grupo-prediccion">
-                      {v.g1} - {v.g2}
-                      {v.avanza && <small> ({v.avanza})</small>}
-                    </span>
-                    {partidoTerminado && ptsSumados !== null && (
-                      <span
-                        className={`grupo-puntos-badge ${ptsSumados > 0 ? "sumo-puntos" : "cero-puntos"}`}
-                      >
-                        +{ptsSumados} pts
+                    <div className="grupo-valores-derecha">
+                      <span className="grupo-prediccion">
+                        {v.g1} - {v.g2}
+                        {v.avanza && <small> ({v.avanza})</small>}
                       </span>
-                    )}
+                      {partidoTerminado && ptsSumados !== null && (
+                        <span
+                          className={`grupo-puntos-badge ${ptsSumados > 0 ? "sumo-puntos" : "cero-puntos"}`}
+                        >
+                          +{ptsSumados} pts
+                        </span>
+                      )}
+                    </div>
                   </div>
                 );
               })}

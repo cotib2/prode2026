@@ -200,10 +200,7 @@ export default function PrediccionFinal() {
         <h2 className="fixture-title">Predicción del Torneo</h2>
 
         {estaBloqueado ? (
-          <div className="tiempo-alerta bloqueado">
-            🔒 Votación cerrada. El torneo ya comenzó o falta menos de 5 minutos
-            para el debut.
-          </div>
+          <div className="tiempo-alerta bloqueado">🔒 Votación cerrada.</div>
         ) : (
           <div className="tiempo-alerta disponible">
             ⏰ Disponible hasta 5 minutos antes del primer partido.
