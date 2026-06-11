@@ -110,6 +110,20 @@
    📦 PARTE 2: TARJETA DE PARTIDO (Se puede dejar acá o mover a PartidoCard.css)
    ========================================================================== */
 
+.partido-card-container {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+/* Opcional: Para que no colapse el tamaño del bloque de votación en desktop */
+@media (min-width: 480px) {
+  .partido-voto {
+    min-width: 190px;
+    justify-content: flex-end;
+  }
+}
+
 .partido-card {
   background-color: #ffffff;
   border: 1px solid #e5e7eb; /* Borde fino y sutil */
@@ -126,6 +140,36 @@
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.04); /* Un toque de relieve al pasar el mouse */
 }
 
+.partido-card.card-deshabilitada {
+  background-color: #f5f7f8;
+  border: 1px solid #cfd8dc;
+  opacity: 0.8;
+  filter: grayscale(15%);
+}
+
+.card-deshabilitada .input-goles:disabled {
+  background-color: #eceff1;
+  color: #546e7a;
+  border: 1px solid #b0bec5;
+  cursor: not-allowed;
+}
+
+.resultado-real-badge {
+  display: inline-block;
+  margin-top: 8px;
+  padding: 4px 10px;
+  font-size: 0.8rem;
+  background-color: #e0f2f1;
+  color: #004d40;
+  border-radius: 4px;
+  border: 1px solid #b2dfdb;
+}
+
+/* Forzamos que si la tarjeta está deshabilitada y no hay botón, los inputs queden centrados perfectos */
+.card-deshabilitada .voto-inputs {
+  justify-content: center;
+  margin: auto 0;
+}
 .partido-info {
   width: 100%;
 }
@@ -313,4 +357,113 @@
   font-weight: bold;
   color: #2196f3;
   text-decoration: underline;
+}
+
+/* El botón del ojito que ocupa el lugar del botón Votar */
+.btn-ojito {
+  flex: 1;
+  max-width: 120px;
+  height: 36px;
+  background-color: #f3f4f6;
+  color: #4b5563;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 12px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  transition: all 0.15s ease;
+}
+
+.btn-ojito:hover {
+  background-color: #e5e7eb;
+  color: #1f2937;
+}
+
+.btn-ojito.ojito-abierto {
+  background-color: #374151;
+  color: #ffffff;
+  border-color: #374151;
+}
+
+/* Caja contenedora del desglose de los votos abajo */
+.desgloses-grupo-box {
+  background-color: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-top: none; /* Hace el efecto que sale de adentro de la tarjeta */
+  border-bottom-left-radius: 12px;
+  border-bottom-right-radius: 12px;
+  padding: 12px 16px;
+  margin-top: -4px; /* Solapa sutilmente con el borde de la card */
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.02);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.loading-grupo,
+.no-votos-grupo {
+  font-size: 12px;
+  color: #9ca3af;
+  text-align: center;
+  margin: 4px 0;
+}
+
+/* Filas de la tablita de amigas */
+.tabla-mini-grupo {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.fila-voto-grupo {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 0;
+  border-bottom: 1px dashed #f3f4f6;
+  font-size: 13px;
+}
+
+.fila-voto-grupo:last-child {
+  border-bottom: none;
+}
+
+.grupo-username {
+  font-weight: 500;
+  color: #374151;
+}
+
+.grupo-prediccion {
+  font-weight: 700;
+  color: #111827;
+  background-color: #f9fafb;
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+
+.grupo-prediccion small {
+  font-weight: 400;
+  color: #6b7280;
+}
+
+/* Badges de puntuaciones */
+.grupo-puntos-badge {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.grupo-puntos-badge.sumo-puntos {
+  background-color: #e8f5e9;
+  color: #2e7d32;
+}
+
+.grupo-puntos-badge.cero-puntos {
+  background-color: #fafafa;
+  color: #9e9e9e;
 }

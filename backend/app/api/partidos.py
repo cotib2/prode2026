@@ -100,9 +100,48 @@ def guardar_o_modificar_pronostico(payload: PronosticoSchema):
 @router.get("/tabla-posiciones")
 def obtener_tabla_posiciones():
     """
-    Retorna el ranking real de los usuarios calculado al instante en el backend cruzando datos.
+    Aplica 'Lazy Update': si pasaron más de 15 minutos desde la última vez,
+    sincroniza automáticamente los partidos con la API externa en segundo plano.
     """
     try:
+
+        constantes_res = supabase.table("constantes_torneo").select("*").eq("id", 1).execute()
+        ahora = datetime.now(timezone.utc)
+        necesita_sincronizar = False
+
+        if constantes_res.data and len(constantes_res.data) > 0:
+            constantes = constantes_res.data[0]
+            ultima_sincro_str = constantes.get("ultima_sincronizacion")
+            
+            if ultima_sincro_str:
+                # Parseamos la fecha que viene de Postgres (quitando el 'Z' o formateando)
+                # Reemplazar 'Z' por '+00:00' para compatibilidad con Python de ser necesario
+                ultima_sincro = datetime.fromisoformat(ultima_sincro_str.replace("Z", "+00:00"))
+                
+                # 🚀 CANDADO: Si pasaron más de 15 minutos, habilitamos la recarga
+                if ahora - ultima_sincro > timedelta(minutes=15):
+                    necesita_sincronizar = True
+            else:
+                necesita_sincronizar = True
+        else:
+            necesita_sincronizar = True
+
+        # 2. 🔄 Si el candado venció, disparamos tu función de sincronización existente
+        if necesita_sincronizar:
+            print("⏳ El candado de 15 min venció. Sincronizando partidos de forma automática...")
+            try:
+                # LLAMÁ ACÁ A TU FUNCIÓN REAL QUE TRAE LOS PARTIDOS DE LA FOOTBALL API
+                # Ejemplo ficticio (reemplazalo por tu lógica de sincronizar):
+                # sincronizar_partidos_con_api_externa()
+                
+                # Después de sincronizar los partidos con éxito, actualizamos el timestamp en Supabase
+                supabase.table("constantes_torneo").update({"ultima_sincronizacion": ahora.isoformat()}).eq("id", 1).execute()
+                print("✅ Sincronización automática completada.")
+            except Exception as api_err:
+                # Si la API externa falla (ej: te quedaste sin créditos), lo atajamos acá 
+                # para que la app siga funcionando igual con los datos locales viejos
+                print(f"⚠️ No se pudo auto-sincronizar (API externa caída/sin créditos): {api_err}")
+
         # A. Traer partidos que ya terminaron (FINISHED)
         partidos = supabase.table("partidos").select("*").eq("estado", "FINISHED").execute().data
         partidos_dict = {p["id_api"]: p for p in partidos}
@@ -175,3 +214,34 @@ def obtener_tabla_posiciones():
         print(f"❌ Error en obtener_tabla_posiciones: {e}")
         raise HTTPException(status_code=500, detail=f"Error al procesar el ranking de posiciones: {str(e)}")
     
+
+@router.get("/partidos/{partido_id}/pronosticos-grupo")
+def obtener_pronosticos_grupo(partido_id: int):
+    """
+    Devuelve los pronósticos de todos los usuarios para un partido específico,
+    incluyendo el username de cada uno para poder armar el desglose.
+    """
+    try:
+        # Traemos los pronósticos de este partido cruzando con la tabla profiles
+        res = supabase.table("pronosticos") \
+            .select("goles_pronostico_1, goles_pronostico_2, equipo_avanza_pronostico, user_id, profiles(username)") \
+            .eq("partido_id", partido_id) \
+            .execute()
+            
+        # Acomodamos el JSON para que sea más fácil de leer en React
+        votos = []
+        for item in res.data:
+            # profiles puede venir como diccionario por la relación
+            profile = item.get("profiles", {})
+            votos.append({
+                "user_id": item.get("user_id"),
+                "username": profile.get("username", "Anon"),
+                "g1": item.get("goles_pronostico_1"),
+                "g2": item.get("goles_pronostico_2"),
+                "avanza": item.get("equipo_avanza_pronostico")
+            })
+            
+        return {"status": "success", "data": votos}
+    except Exception as e:
+        print(f"❌ Error al traer pronósticos del grupo: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
