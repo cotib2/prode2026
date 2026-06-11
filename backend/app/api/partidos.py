@@ -224,7 +224,7 @@ def obtener_pronosticos_grupo(partido_id: int):
     try:
         # Traemos los pronósticos de este partido cruzando con la tabla profiles
         res = supabase.table("pronosticos") \
-            .select("goles_pronostico_1, goles_pronostico_2, equipo_avanza_pronostico, user_id, profiles(username)") \
+            .select("goles_pronostico_1, goles_pronostico_2, gana_penales_pronostico, user_id, profiles(username)") \
             .eq("partido_id", partido_id) \
             .execute()
             
