@@ -13,11 +13,12 @@ const TRADUCCIONES_INSTANCIAS = {
 };
 
 function calcularPuntosEspejo(prono, partido) {
-  if (partido.estado !== "FINISHED") return null;
+  if (partido.estado !== "FINISHED") return null; // No hay puntos si no terminó
 
+  // Desestructuramos y casteamos a los tipos correctos para evitar problemas de tipos
   const real1 = partido.goles_real_1;
   const real2 = partido.goles_real_2;
-  const rAvanza = partido.ganador_penales_real;
+  const rAvanza = partido.equipo_avanza_real; // 🚨 Asegurate que en tu objeto partido se llame así
   const instancia = partido.instancia;
 
   const prono1 =
@@ -26,51 +27,61 @@ function calcularPuntosEspejo(prono, partido) {
     prono.g2 !== null && prono.g2 !== undefined ? parseInt(prono.g2) : null;
   const pAvanza = prono.avanza;
 
+  // Validación de nulos espejo de Python
   if (prono1 === null || prono2 === null || real1 === null || real2 === null) {
     return 0;
   }
 
+  // Determinar tendencias de los 90 minutos (Espejo de Python)
+  // 1 = Gana equipo 1, -1 = Gana equipo 2, 0 = Empate
   const tReal = real1 > real2 ? 1 : real1 < real2 ? -1 : 0;
   const tProno = prono1 > prono2 ? 1 : prono1 < prono2 ? -1 : 0;
 
   // -------------------------------------------------------------------------
-  // ESCENARIO 1: EMPATE EN LOS 90 MINUTOS REALES
+  // ESCENARIO 1: EMPATE EN LOS 90 MINUTOS
   // -------------------------------------------------------------------------
   if (tReal === 0) {
-    // Si también pronosticó empate
-    if (tProno === 0) {
-      if (instancia === "GROUP_STAGE") {
-        if (prono1 === real1) return 6; // Empate exacto (ej: 1-1 y puso 1-1)
-        return 3; // Empate no exacto (ej: 1-1 y puso 2-2)
-      } else {
-        const esExacto = prono1 === real1;
-        const acertoPenales =
-          pAvanza === rAvanza && rAvanza !== null && rAvanza !== undefined;
-
-        if (esExacto && acertoPenales) return 9;
-        if (esExacto && !acertoPenales) return 6;
-        if (!esExacto && acertoPenales) return 6;
-        if (!esExacto && !acertoPenales) return 3;
-      }
+    if (tProno !== 0) {
+      return 0; // Erró la tendencia principal de empate
     }
-    // Si NO pronosticó empate (ej: 1-1 real y puso 1-3), salta al chequeo de consuelo al final
+
+    // A. Empate en Fase de Grupos
+    if (instancia === "GROUP_STAGE") {
+      if (prono1 === real1) {
+        return 6; // Empate exacto
+      }
+      return 3; // Empate no exacto
+    }
+    // B. Empate en Eliminación Directa (Entran los penales)
+    else {
+      const esExacto = prono1 === real1;
+      const acertoPenales =
+        pAvanza === rAvanza && rAvanza !== null && rAvanza !== undefined;
+
+      if (esExacto && acertoPenales) return 9; // Empate exacto + ganador penales
+      if (esExacto && !acertoPenales) return 6; // Empate exacto sin ganador penales
+      if (!esExacto && acertoPenales) return 6; // Empate no exacto + ganador penales
+      if (!esExacto && !acertoPenales) return 3; // Empate no exacto y sin ganador penales
+    }
   }
   // -------------------------------------------------------------------------
-  // ESCENARIO 2: HUBO UN GANADOR EN LOS 90 MINUTOS REALES
+  // ESCENARIO 2: HUBO UN GANADOR EN LOS 90 MINUTOS
   // -------------------------------------------------------------------------
   else {
     if (tReal === tProno) {
-      if (prono1 === real1 && prono2 === real2) return 6; // Marcador exacto
-      if (prono1 === real1 || prono2 === real2) return 4; // Resultado parcial
+      if (prono1 === real1 && prono2 === real2) {
+        return 6; // Marcador exacto
+      }
+      if (prono1 === real1 || prono2 === real2) {
+        return 4; // Resultado parcial (Ganador + goles exactos de un equipo)
+      }
       return 3; // Ganador correcto simple
+    } else {
+      if (prono1 === real1 || prono2 === real2) {
+        return 1; // Goles de un equipo correcto (Consuelo)
+      }
+      return 0;
     }
-  }
-
-  // -------------------------------------------------------------------------
-  // FILTRO DE CONSUELO: Para cualquiera que haya errado la tendencia (incluye empates)
-  // -------------------------------------------------------------------------
-  if (prono1 === real1 || prono2 === real2) {
-    return 1; // Rescata 1 punto por pegarle a los goles de un equipo
   }
 
   return 0;

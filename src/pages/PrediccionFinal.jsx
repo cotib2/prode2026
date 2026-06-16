@@ -161,6 +161,8 @@ export default function PrediccionFinal() {
     navigate("/login");
   };
 
+  if (loading) return <div className="dashboard-container">Cargando...</div>;
+
   return (
     <div className="dashboard-container">
       <header className="dashboard-header">
@@ -197,70 +199,57 @@ export default function PrediccionFinal() {
       <main className="dashboard-main-scroll">
         <h2 className="fixture-title">Predicción del Torneo</h2>
 
-        {loading ? (
-          <div className="contenedor-spinner-prode">
-            <div className="spinner-prode"></div>
-            <p className="loading-text-sutil">
-              Cargando tus predicciones finales... 🏆
-            </p>
-          </div>
+        {estaBloqueado ? (
+          <div className="tiempo-alerta bloqueado">🔒 Votación cerrada.</div>
         ) : (
-          <>
-            {estaBloqueado ? (
-              <div className="tiempo-alerta bloqueado">
-                🔒 Votación cerrada.
-              </div>
-            ) : (
-              <div className="tiempo-alerta disponible">
-                ⏰ Disponible hasta 5 minutos antes del primer partido.
-              </div>
-            )}
-
-            <div className="campeon-container">
-              <div className="seleccion-bloque">
-                <h3>🥇 Elegí tu Campeón</h3>
-                <select
-                  value={campeon}
-                  onChange={(e) => setCampeon(e.target.value)}
-                  disabled={estaBloqueado}
-                  className="select-pais"
-                >
-                  <option value="">-- Seleccionar País --</option>
-                  {paises.map((p) => (
-                    <option key={p} value={p}>
-                      {p}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="seleccion-bloque">
-                <h3>🥈 Elegí tu Subcampeón</h3>
-                <select
-                  value={subcampeon}
-                  onChange={(e) => setSubcampeon(e.target.value)}
-                  disabled={estaBloqueado}
-                  className="select-pais"
-                >
-                  <option value="">-- Seleccionar País --</option>
-                  {paises.map((p) => (
-                    <option key={p} value={p}>
-                      {p}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <button
-                onClick={guardarPrediccionFinal}
-                disabled={estaBloqueado}
-                className="btn-guardar-final"
-              >
-                Guardar Elección
-              </button>
-            </div>
-          </>
+          <div className="tiempo-alerta disponible">
+            ⏰ Disponible hasta 5 minutos antes del primer partido.
+          </div>
         )}
+
+        <div className="campeon-container">
+          <div className="seleccion-bloque">
+            <h3>🥇 Elegí tu Campeón</h3>
+            <select
+              value={campeon}
+              onChange={(e) => setCampeon(e.target.value)}
+              disabled={estaBloqueado}
+              className="select-pais"
+            >
+              <option value="">-- Seleccionar País --</option>
+              {paises.map((p) => (
+                <option key={p} value={p}>
+                  {p}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="seleccion-bloque">
+            <h3>🥈 Elegí tu Subcampeón</h3>
+            <select
+              value={subcampeon}
+              onChange={(e) => setSubcampeon(e.target.value)}
+              disabled={estaBloqueado}
+              className="select-pais"
+            >
+              <option value="">-- Seleccionar País --</option>
+              {paises.map((p) => (
+                <option key={p} value={p}>
+                  {p}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <button
+            onClick={guardarPrediccionFinal}
+            disabled={estaBloqueado}
+            className="btn-guardar-final"
+          >
+            Guardar Elección
+          </button>
+        </div>
       </main>
     </div>
   );

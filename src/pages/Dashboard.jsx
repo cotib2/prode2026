@@ -80,6 +80,14 @@ export default function Dashboard() {
     });
   };
 
+  if (loading) {
+    return (
+      <div className="dashboard-container">
+        <p className="loading-text">Cargando fixture del mundial...</p>
+      </div>
+    );
+  }
+
   return (
     <div className="dashboard-container">
       {/* Barra superior fija */}
@@ -126,30 +134,24 @@ export default function Dashboard() {
       <main className="dashboard-main-scroll">
         <h2 className="fixture-title">Fixture Fase de Grupos</h2>
 
-        {loading ? (
-          <div className="contenedor-spinner-prode">
-            <div className="spinner-prode"></div>
-            <p className="loading-text-sutil">Cargando partidos...</p>
-          </div>
-        ) : (
-          <div className="partidos-list">
-            {partidos.map((partido) => {
-              const miVoto = pronosticos.find(
-                (p) => p.partido_id === partido.id_api,
-              );
+        <div className="partidos-list">
+          {partidos.map((partido) => {
+            // Buscamos si existe un voto guardado para este partido en particular
+            const miVoto = pronosticos.find(
+              (p) => p.partido_id === partido.id_api,
+            );
 
-              return (
-                <PartidoCard
-                  key={partido.id_api}
-                  partido={partido}
-                  userId={userId}
-                  votoInicial={miVoto}
-                  formatearFecha={formatearFecha}
-                />
-              );
-            })}
-          </div>
-        )}
+            return (
+              <PartidoCard
+                key={partido.id_api}
+                partido={partido}
+                userId={userId}
+                votoInicial={miVoto}
+                formatearFecha={formatearFecha}
+              />
+            );
+          })}
+        </div>
       </main>
     </div>
   );

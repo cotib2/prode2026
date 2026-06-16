@@ -72,6 +72,23 @@ export default function TablaPuntos() {
     navigate("/login");
   };
 
+  if (loading) {
+    return (
+      <div className="dashboard-container">
+        <p
+          style={{
+            color: "#4b5563",
+            textAlign: "center",
+            marginTop: "40px",
+            fontWeight: "600",
+          }}
+        >
+          Calculando puntajes en tiempo real... 📊
+        </p>
+      </div>
+    );
+  }
+
   return (
     <div className="dashboard-container">
       <header className="dashboard-header">
@@ -115,40 +132,33 @@ export default function TablaPuntos() {
       <main className="dashboard-main-scroll">
         <h2 className="fixture-title">Tabla de Posiciones</h2>
 
-        {loading ? (
-          <div className="contenedor-spinner-prode">
-            <div className="spinner-prode"></div>
-            <p className="loading-text-sutil">Cargando puntajes...</p>
-          </div>
-        ) : (
-          <div className="tabla-container">
-            <table className="prode-tabla">
-              <thead>
-                <tr>
-                  <th>Pos</th>
-                  <th>Usuario</th>
-                  <th>Puntos</th>
-                </tr>
-              </thead>
-              <tbody>
-                {ranking.map((jugador, index) => {
-                  const esUsuarioActual = jugador.username.includes("(Vos)");
+        <div className="tabla-container">
+          <table className="prode-tabla">
+            <thead>
+              <tr>
+                <th>Pos</th>
+                <th>Usuario</th>
+                <th>Puntos</th>
+              </tr>
+            </thead>
+            <tbody>
+              {ranking.map((jugador, index) => {
+                const esUsuarioActual = jugador.username.includes("(Vos)");
 
-                  return (
-                    <tr
-                      key={index}
-                      className={esUsuarioActual ? "fila-usuario-actual" : ""}
-                    >
-                      <td className="posicion-cell">{index + 1}°</td>
-                      <td className="username-cell">{jugador.username}</td>
-                      <td className="puntos-cell">{jugador.puntos} pts</td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        )}
+                return (
+                  <tr
+                    key={index}
+                    className={esUsuarioActual ? "fila-usuario-actual" : ""}
+                  >
+                    <td className="posicion-cell">{index + 1}°</td>
+                    <td className="username-cell">{jugador.username}</td>
+                    <td className="puntos-cell">{jugador.puntos} pts</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
       </main>
     </div>
   );
