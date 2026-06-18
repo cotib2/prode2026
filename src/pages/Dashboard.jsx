@@ -80,24 +80,15 @@ export default function Dashboard() {
     });
   };
 
-  if (loading) {
-    return (
-      <div className="dashboard-container">
-        <p className="loading-text">Cargando fixture del mundial...</p>
-      </div>
-    );
-  }
-
   return (
     <div className="dashboard-container">
-      {/* Barra superior fija */}
+      {/* 🚀 EL HEADER SE RENDERIZA SIEMPRE DESDE EL MINUTO CERO */}
       <header className="dashboard-header">
         <h1 className="welcome-text">
           ⚽ ¡Hola,{" "}
           <span className="username-highlight">{username || "Jugador"}</span>!
         </h1>
         <div className="header-actions">
-          {/* Botón Fixture */}
           <button
             onClick={() => navigate("/dashboard")}
             className={`btn-nav ${location.pathname === "/dashboard" ? "active" : ""}`}
@@ -106,7 +97,6 @@ export default function Dashboard() {
             📅
           </button>
 
-          {/* Botón Tabla */}
           <button
             onClick={() => navigate("/tabla")}
             className={`btn-nav ${location.pathname === "/tabla" ? "active" : ""}`}
@@ -115,7 +105,6 @@ export default function Dashboard() {
             📊
           </button>
 
-          {/* Botón Campeon */}
           <button
             onClick={() => navigate("/campeon")}
             className={`btn-nav ${location.pathname === "/campeon" ? "active" : ""}`}
@@ -124,34 +113,40 @@ export default function Dashboard() {
             🏆
           </button>
 
-          {/* Botón Cerrar Sesión */}
           <button onClick={handleLogout} className="btn-logout">
             Salir
           </button>
         </div>
       </header>
 
+      {/* 🚀 EL LOADING AHORA CONTROLAR SOLO EL CONTENIDO INTERNO */}
       <main className="dashboard-main-scroll">
         <h2 className="fixture-title">Fixture Fase de Grupos</h2>
 
-        <div className="partidos-list">
-          {partidos.map((partido) => {
-            // Buscamos si existe un voto guardado para este partido en particular
-            const miVoto = pronosticos.find(
-              (p) => p.partido_id === partido.id_api,
-            );
+        {loading ? (
+          <div className="contenedor-spinner-prode">
+            <div className="spinner-prode"></div>
+            <p className="loading-text-sutil">Cargando partidos...</p>
+          </div>
+        ) : (
+          <div className="partidos-list">
+            {partidos.map((partido) => {
+              const miVoto = pronosticos.find(
+                (p) => p.partido_id === partido.id_api,
+              );
 
-            return (
-              <PartidoCard
-                key={partido.id_api}
-                partido={partido}
-                userId={userId}
-                votoInicial={miVoto}
-                formatearFecha={formatearFecha}
-              />
-            );
-          })}
-        </div>
+              return (
+                <PartidoCard
+                  key={partido.id_api}
+                  partido={partido}
+                  userId={userId}
+                  votoInicial={miVoto}
+                  formatearFecha={formatearFecha}
+                />
+              );
+            })}
+          </div>
+        )}
       </main>
     </div>
   );
