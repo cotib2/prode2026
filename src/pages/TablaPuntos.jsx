@@ -117,9 +117,7 @@ export default function TablaPuntos() {
         {loading ? (
           <div className="contenedor-spinner-prode">
             <div className="spinner-prode"></div>
-            <p className="loading-text-sutil">
-              Calculando puntajes en vivo... 📊
-            </p>
+            <p className="loading-text-sutil">Calculando puntajes...</p>
           </div>
         ) : (
           <div className="tabla-container">
