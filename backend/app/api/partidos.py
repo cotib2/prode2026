@@ -14,6 +14,30 @@ router = APIRouter(
 # Inicializamos el servicio de la API de fútbol afuera para reutilizarlo
 football_service = FootballAPIService()
 
+def fetch_all_rows(table_name: str, select_str: str = "*", filtros: dict = None):
+    """
+    Supabase/PostgREST devuelve como máximo 1000 filas por consulta por default.
+    Esta función pagina con .range() hasta traer la tabla completa, para no
+    perder filas en silencio cuando la cantidad de registros supera ese límite.
+    """
+    all_rows = []
+    page_size = 1000
+    start = 0
+    while True:
+        query = supabase.table(table_name).select(select_str)
+        if filtros:
+            for col, val in filtros.items():
+                query = query.eq(col, val)
+        res = query.range(start, start + page_size - 1).execute()
+        chunk = res.data
+        if not chunk:
+            break
+        all_rows.extend(chunk)
+        if len(chunk) < page_size:
+            break
+        start += page_size
+    return all_rows
+
 class PronosticoSchema(BaseModel):
     partido_id: str
     user_id: str
@@ -142,12 +166,13 @@ def obtener_tabla_posiciones():
                 # para que la app siga funcionando igual con los datos locales viejos
                 print(f"⚠️ No se pudo auto-sincronizar (API externa caída/sin créditos): {api_err}")
 
-        # A. Traer partidos que ya terminaron (FINISHED)
-        partidos = supabase.table("partidos").select("*").eq("estado", "FINISHED").execute().data
-        partidos_dict = {p["id_api"]: p for p in partidos}
+        # A. Traer partidos que ya terminaron (FINISHED) - paginado por seguridad
+        partidos = fetch_all_rows("partidos", filtros={"estado": "FINISHED"})
+        partidos_dict = {int(p["id_api"]): p for p in partidos}
 
-        pronosticos = supabase.table("pronosticos").select("*").execute().data
-        usuarios = supabase.table("profiles").select("id, username, campeon_prediccion, subcampeon_prediccion").execute().data
+        # B. Traer TODOS los pronósticos de TODOS los usuarios - paginado (esto es lo que se estaba cortando en 1000 filas)
+        pronosticos = fetch_all_rows("pronosticos")
+        usuarios = fetch_all_rows("profiles", select_str="id, username, campeon_prediccion, subcampeon_prediccion")
         
         constantes_res = supabase.table("constantes_torneo").select("campeon_real, subcampeon_real").eq("id", 1).execute()
         campeon_real = None
@@ -162,7 +187,7 @@ def obtener_tabla_posiciones():
 
         # E. Correr el bucle sumador usando la calculadora matemática pura de Python
         for prono in pronosticos:
-            p_id = prono["partido_id"]
+            p_id = int(prono["partido_id"])
             u_id = prono["user_id"]
 
             if p_id not in partidos_dict or u_id not in ranking:
