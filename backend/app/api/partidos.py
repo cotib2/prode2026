@@ -49,24 +49,72 @@ class PronosticoSchema(BaseModel):
 @router.post("/sincronizar")
 def sincronizar_fixture():
     """
-    Endpoint manual para traer todo el fixture inicial o forzar recarga.
+    Trae los partidos de la API externa. Si detecta que un partido terminó 
+    y localmente no estaba FINISHED, calcula los puntos e incrementa 'puntos_totales'.
     """
     try:
         partidos_api = football_service.obtener_fixture_mundial()
         if not partidos_api:
             raise HTTPException(status_code=502, detail="No se pudieron obtener partidos de la API externa.")
 
+        # 1. Traemos cómo están los partidos guardados localmente para comparar estados
+        partidos_locales = fetch_all_rows("partidos", select_str="id_api, estado")
+        estados_locales = {p["id_api"]: p["estado"] for p in partidos_locales}
+
+        # 2. Buscamos qué usuarios hay en el sistema y sus pronósticos
+        usuarios = fetch_all_rows("profiles", select_str="id")
+        
+        # Procesamos cada partido que viene de la API externa
+        for p_api in partidos_api:
+            p_id = p_api["id_api"]
+            estado_nuevo = p_api["estado"]
+            estado_viejo = estados_locales.get(p_id)
+
+            # 🚀 CONDICIÓN CLAVE: El partido acaba de terminar en la API externa
+            if estado_nuevo == "FINISHED" and estado_viejo != "FINISHED":
+                print(f"⚽ ¡Partido Finalizado Detectado! Calculando puntos para el partido ID {p_id}...")
+                
+                # Traemos los pronósticos exclusivamente de ESTE partido terminado
+                pronos_partido = fetch_all_rows("pronosticos", filtros={"partido_id": p_id})
+                pronos_dict = {prono["user_id"]: prono for prono in pronos_partido}
+
+                # Evaluamos a cada usuario registrado
+                for u in usuarios:
+                    u_id = u["id"]
+                    prono = pronos_dict.get(u_id)
+                    
+                    puntos_ganados = 0
+                    if prono:
+                        # Ejecutamos el motor matemático para este único partido
+                        puntos_ganados = calcular_puntos_prode_complejo(
+                            prono_1=prono.get("goles_pronostico_1"),
+                            prono_2=prono.get("goles_pronostico_2"),
+                            p_avanza=prono.get("gana_penales_pronostico"),
+                            real_1=p_api.get("goles_real_1"),
+                            real_2=p_api.get("goles_real_2"),
+                            r_avanza=p_api.get("ganador_penales_real"), # Asegurá que tu API devuelva penales si aplica
+                            instancia=p_api.get("instancia")
+                        )
+                        
+                        # Guardamos los puntos ganados en el registro del pronóstico por si querés auditar
+                        supabase.table("pronosticos").update({"puntos_ganados": puntos_ganados}).eq("user_id", u_id).eq("partido_id", p_id).execute()
+
+                    if puntos_ganados > 0:
+                        # 💥 INCREMENTO INCREMENTAL: Usamos RPC de Supabase para evitar condiciones de carrera
+                        # Si no tenés la función RPC, abajo te explico cómo crearla en 1 segundo.
+                        supabase.rpc("incrementar_puntos_usuario", {"user_id_param": u_id, "puntos_incremento": puntos_ganados}).execute()
+                        print(f"   > +{puntos_ganados} pts aplicados a la columna puntos_totales del usuario {u_id}")
+
+        # 3. Guardamos los cambios de los partidos en Supabase
         supabase.table("partidos").upsert(partidos_api, on_conflict="id_api").execute()
 
         return {
             "status": "success",
-            "message": f"Se sincronizaron {len(partidos_api)} partidos exitosamente en Supabase.",
-            "cantidad": len(partidos_api)
+            "message": f"Se sincronizaron {len(partidos_api)} partidos. Se procesaron los puntos acumulados de los partidos finalizados."
         }
     except Exception as e:
         print(f"❌ Error en sincronizar_fixture: {e}")
-        raise HTTPException(status_code=500, detail=f"Error interno del servidor: {str(e)}")
-
+        raise HTTPException(status_code=500, detail=str(e))
 
 # ENDPOINT 2
 @router.post("/votar")
@@ -113,10 +161,11 @@ def guardar_o_modificar_pronostico(payload: PronosticoSchema):
 @router.get("/tabla-posiciones")
 def obtener_tabla_posiciones():
     """
-    Sincronización reactiva 'On-Demand' con candado de 2 minutos.
-    Filtra los partidos para actualizar ÚNICAMENTE los que no están finalizados localmente.
+    Retorna el ranking leyendo directamente de 'puntos_totales' en la tabla profiles.
+    Mantiene la auto-sincronización On-Demand por si hay partidos en juego.
     """
     try:
+        # 1. Mantenemos tu sincronización On-Demand (Llama al endpoint de arriba internamente)
         constantes_res = supabase.table("constantes_torneo").select("*").eq("id", 1).execute()
         ahora = datetime.now(timezone.utc)
         necesita_sincronizar = False
@@ -124,13 +173,8 @@ def obtener_tabla_posiciones():
         if constantes_res.data and len(constantes_res.data) > 0:
             constantes = constantes_res.data[0]
             ultima_sincro_str = constantes.get("ultima_sincronizacion")
-            
             if ultima_sincro_str:
                 ultima_sincro = datetime.fromisoformat(ultima_sincro_str.replace("Z", "+00:00"))
-                print(f"⏰ HORA ACTUAL (UTC): {ahora}")
-                print(f"📅 ÚLTIMA SINCRO EN BDD: {ultima_sincro}")
-                print(f"⏱️ TIEMPO TRANSCURRIDO: {ahora - ultima_sincro}")                
-                # 🚀 Candado corto de 2 minutos para evitar saturación por ráfagas
                 if ahora - ultima_sincro > timedelta(minutes=2):
                     necesita_sincronizar = True
             else:
@@ -138,93 +182,28 @@ def obtener_tabla_posiciones():
         else:
             necesita_sincronizar = True
 
-        # 🔄 Sincronización inteligente bajo demanda
+        # Si el candado venció, disparamos la sincronización que revisa partidos e impacta los puntos
         if necesita_sincronizar:
-            print("⏳ Candado vencido. Sincronizando partidos activos con la API externa...")
-            try:
-                # 1. Buscamos qué IDs ya tenemos cerrados/finalizados en Supabase
-                partidos_finalizados = supabase.table("partidos").select("id_api").eq("estado", "FINISHED").execute()
-                ids_finalizados = {int(p["id_api"]) for p in partidos_finalizados.data}
+            sincronizar_fixture()
 
-                # 2. Traemos el fixture fresco completo de la API de fútbol
-                partidos_api = football_service.obtener_fixture_mundial()
-                
-                if partidos_api:
-                    # 🚀 FILTRO ESTRATÉGICO: Mandamos al upsert únicamente los activos
-                    partidos_activos_a_actualizar = [
-                        p for p in partidos_api 
-                        if int(p["id_api"]) not in ids_finalizados
-                    ]
+        # 2. 🚀 LA MAGIA: Traemos los usuarios ordenados directamente por su puntaje acumulado
+        # Modificá 'puntos_totales' por el nombre exacto de tu columna si cambia en Postgres
+        usuarios_res = supabase.table("profiles")\
+            .select("username, puntos_totales")\
+            .order("puntos_totales", ascending=False)\
+            .execute()
 
-                    if partidos_activos_a_actualizar:
-                        supabase.table("partidos").upsert(partidos_activos_a_actualizar, on_conflict="id_api").execute()
-                        print(f"✅ Se actualizaron {len(partidos_activos_a_actualizar)} partidos activos.")
-                    else:
-                        print("🤷‍♂️ No hay partidos activos nuevos por impactar.")
-                    
-                    # Guardamos el registro del candado temporal global
-                    supabase.table("constantes_torneo").update({"ultima_sincronizacion": ahora.isoformat()}).eq("id", 1).execute()
-            
-            except Exception as api_err:
-                print(f"⚠️ No se pudo auto-sincronizar (API externa caída o sin saldo): {api_err}")
+        # Moldeamos la respuesta para que tu Frontend (TablaPuntos.jsx) la lea sin enterarse del cambio
+        ranking_ordenado = [
+            {"username": u["username"], "puntos": u.get("puntos_totales", 0)}
+            for u in usuarios_res.data
+        ]
 
-        # -------------------------------------------------------------------------
-        # PROCESAMIENTO GENERAL DEL RANKING
-        # -------------------------------------------------------------------------
-        partidos = fetch_all_rows("partidos", filtros={"estado": "FINISHED"})
-        partidos_dict = {int(p["id_api"]): p for p in partidos}
-
-        pronosticos = fetch_all_rows("pronosticos")
-        usuarios = fetch_all_rows("profiles", select_str="id, username, campeon_prediccion, subcampeon_prediccion")
-        
-        constantes_res = supabase.table("constantes_torneo").select("campeon_real, subcampeon_real").eq("id", 1).execute()
-        campeon_real = None
-        subcampeon_real = None
-
-        if constantes_res.data and len(constantes_res.data) > 0:
-            campeon_real = constantes_res.data[0].get("campeon_real")
-            subcampeon_real = constantes_res.data[0].get("subcampeon_real")
-
-        ranking = {u["id"]: {"username": u["username"], "puntos": 0} for u in usuarios}
-
-        for prono in pronosticos:
-            p_id = int(prono["partido_id"])
-            u_id = prono["user_id"]
-
-            if p_id not in partidos_dict or u_id not in ranking:
-                continue
-
-            partido = partidos_dict[p_id]
-
-            puntos = calcular_puntos_prode_complejo(
-                prono_1=prono.get("goles_pronostico_1"),
-                prono_2=prono.get("goles_pronostico_2"),
-                p_avanza=prono.get("gana_penales_pronostico"),
-                real_1=partido.get("goles_real_1"),
-                real_2=partido.get("goles_real_2"),
-                r_avanza=partido.get("ganador_penales_real"),
-                instancia=partido.get("instancia")
-            )
-            ranking[u_id]["puntos"] += puntos
-
-        for u in usuarios:
-            u_id = u["id"]
-            if u_id not in ranking:
-                continue
-            
-            if campeon_real and u.get("campeon_prediccion") == campeon_real:
-                ranking[u_id]["puntos"] += 10
-                
-            if subcampeon_real and u.get("subcampeon_prediccion") == subcampeon_real:
-                ranking[u_id]["puntos"] += 5
-
-        ranking_ordenado = sorted(ranking.values(), key=lambda x: x["puntos"], reverse=True)
         return {"status": "success", "data": ranking_ordenado}
 
     except Exception as e:
-        print(f"❌ Error en obtener_tabla_posiciones: {e}")
-        raise HTTPException(status_code=500, detail=f"Error al procesar el ranking de posiciones: {str(e)}")
-
+        print(f"❌ Error en obtener_tabla_posiciones simplificado: {e}")
+        raise HTTPException(status_code=500, detail=f"Error al traer posiciones: {str(e)}")
 
 @router.get("/{partido_id}/pronosticos-grupo")
 def obtener_pronosticos_grupo(partido_id: int):
