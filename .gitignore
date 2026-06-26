@@ -28,5 +28,7 @@ dist-ssr
 backend/venv/
 **/__pycache__/
 *.pyc
-backend/.env
-backend/.env.local
+# Ignorar entornos en cualquier rincón del proyecto
+**/.env
+**/.env.local
+**/.env.development

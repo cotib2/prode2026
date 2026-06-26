@@ -17,8 +17,7 @@ football_service = FootballAPIService()
 def fetch_all_rows(table_name: str, select_str: str = "*", filtros: dict = None):
     """
     Supabase/PostgREST devuelve como máximo 1000 filas por consulta por default.
-    Esta función pagina con .range() hasta traer la tabla completa, para no
-    perder filas en silencio cuando la cantidad de registros supera ese límite.
+    Esta función pagina con .range() hasta traer la tabla completa.
     """
     all_rows = []
     page_size = 1000
@@ -45,36 +44,30 @@ class PronosticoSchema(BaseModel):
     goles_pronostico_2: int
     gana_penales_pronostico: str = None
 
+
 # ENDPOINT 1
 @router.post("/sincronizar")
 def sincronizar_fixture():
     """
-    Endpoint para traer los partidos de la API externa e inyectarlos/actualizarlos en Supabase.
+    Endpoint manual para traer todo el fixture inicial o forzar recarga.
     """
     try:
-        # 1. Llamamos al servicio para buscar los partidos actuales de la API
         partidos_api = football_service.obtener_fixture_mundial()
-        
         if not partidos_api:
             raise HTTPException(status_code=502, detail="No se pudieron obtener partidos de la API externa.")
 
-        # 2. Hacemos el upsert masivo en Supabase.
-        # Si el 'id_api' ya existe, actualiza los goles y el estado; si no, lo crea de cero.
-        resultado = supabase.table("partidos").upsert(
-            partidos_api, 
-            on_conflict="id_api"
-        ).execute()
+        supabase.table("partidos").upsert(partidos_api, on_conflict="id_api").execute()
 
         return {
             "status": "success",
             "message": f"Se sincronizaron {len(partidos_api)} partidos exitosamente en Supabase.",
             "cantidad": len(partidos_api)
         }
-
     except Exception as e:
         print(f"❌ Error en sincronizar_fixture: {e}")
         raise HTTPException(status_code=500, detail=f"Error interno del servidor: {str(e)}")
-    
+
+
 # ENDPOINT 2
 @router.post("/votar")
 def guardar_o_modificar_pronostico(payload: PronosticoSchema):
@@ -82,14 +75,12 @@ def guardar_o_modificar_pronostico(payload: PronosticoSchema):
     Guarda o actualiza un pronóstico con restricción estricta de tiempo (5 minutos antes).
     """
     try:
-        # 1. Buscar cuándo arranca el partido en Supabase
         partido_res = supabase.table("partidos").select("fecha").eq("id_api", payload.partido_id).single().execute()
         partido = partido_res.data
         
         if not partido:
             raise HTTPException(status_code=404, detail="El partido especificado no existe.")
 
-        # 2. Validar restricción de tiempo (5 minutos antes del inicio oficial)
         fecha_partido = datetime.fromisoformat(partido["fecha"].replace("Z", "+00:00"))
         limite_voto = fecha_partido - timedelta(minutes=5)
         ahora = datetime.now(timezone.utc)
@@ -100,7 +91,6 @@ def guardar_o_modificar_pronostico(payload: PronosticoSchema):
                 detail="🔒 Votación cerrada: Solo podés guardar o modificar hasta 5 minutos antes del inicio oficial del partido."
             )
 
-        # 3. Armar el diccionario para meter el upsert usando tu cliente de base de datos
         voto_dict = {
             "user_id": payload.user_id,
             "partido_id": payload.partido_id,
@@ -109,9 +99,7 @@ def guardar_o_modificar_pronostico(payload: PronosticoSchema):
             "gana_penales_pronostico": payload.gana_penales_pronostico
         }
 
-        # Hacemos upsert en base a la clave compuesta/única de tu tabla pronosticos
         res = supabase.table("pronosticos").upsert(voto_dict, on_conflict="user_id,partido_id").execute()
-        
         return {"status": "success", "message": "Pronóstico guardado correctamente.", "data": res.data}
 
     except HTTPException as he:
@@ -120,15 +108,15 @@ def guardar_o_modificar_pronostico(payload: PronosticoSchema):
         print(f"❌ Error en guardar_o_modificar_pronostico: {e}")
         raise HTTPException(status_code=500, detail=f"Error al procesar el voto: {str(e)}")
 
-# ENDPOINT 3
+
+# ENDPOINT 3 (EL QUE QUERÍAS REFORZAR)
 @router.get("/tabla-posiciones")
 def obtener_tabla_posiciones():
     """
-    Aplica 'Lazy Update': si pasaron más de 15 minutos desde la última vez,
-    sincroniza automáticamente los partidos con la API externa en segundo plano.
+    Sincronización reactiva 'On-Demand' con candado de 2 minutos.
+    Filtra los partidos para actualizar ÚNICAMENTE los que no están finalizados localmente.
     """
     try:
-
         constantes_res = supabase.table("constantes_torneo").select("*").eq("id", 1).execute()
         ahora = datetime.now(timezone.utc)
         necesita_sincronizar = False
@@ -138,39 +126,54 @@ def obtener_tabla_posiciones():
             ultima_sincro_str = constantes.get("ultima_sincronizacion")
             
             if ultima_sincro_str:
-                # Parseamos la fecha que viene de Postgres (quitando el 'Z' o formateando)
-                # Reemplazar 'Z' por '+00:00' para compatibilidad con Python de ser necesario
                 ultima_sincro = datetime.fromisoformat(ultima_sincro_str.replace("Z", "+00:00"))
-                
-                # 🚀 CANDADO: Si pasaron más de 15 minutos, habilitamos la recarga
-                if ahora - ultima_sincro > timedelta(minutes=15):
+                print(f"⏰ HORA ACTUAL (UTC): {ahora}")
+                print(f"📅 ÚLTIMA SINCRO EN BDD: {ultima_sincro}")
+                print(f"⏱️ TIEMPO TRANSCURRIDO: {ahora - ultima_sincro}")                
+                # 🚀 Candado corto de 2 minutos para evitar saturación por ráfagas
+                if ahora - ultima_sincro > timedelta(minutes=2):
                     necesita_sincronizar = True
             else:
                 necesita_sincronizar = True
         else:
             necesita_sincronizar = True
 
-        # 2. 🔄 Si el candado venció, disparamos tu función de sincronización existente
+        # 🔄 Sincronización inteligente bajo demanda
         if necesita_sincronizar:
-            print("⏳ El candado de 15 min venció. Sincronizando partidos de forma automática...")
+            print("⏳ Candado vencido. Sincronizando partidos activos con la API externa...")
             try:
-                # LLAMÁ ACÁ A TU FUNCIÓN REAL QUE TRAE LOS PARTIDOS DE LA FOOTBALL API
-                # Ejemplo ficticio (reemplazalo por tu lógica de sincronizar):
-                # sincronizar_partidos_con_api_externa()
-                
-                # Después de sincronizar los partidos con éxito, actualizamos el timestamp en Supabase
-                supabase.table("constantes_torneo").update({"ultima_sincronizacion": ahora.isoformat()}).eq("id", 1).execute()
-                print("✅ Sincronización automática completada.")
-            except Exception as api_err:
-                # Si la API externa falla (ej: te quedaste sin créditos), lo atajamos acá 
-                # para que la app siga funcionando igual con los datos locales viejos
-                print(f"⚠️ No se pudo auto-sincronizar (API externa caída/sin créditos): {api_err}")
+                # 1. Buscamos qué IDs ya tenemos cerrados/finalizados en Supabase
+                partidos_finalizados = supabase.table("partidos").select("id_api").eq("estado", "FINISHED").execute()
+                ids_finalizados = {int(p["id_api"]) for p in partidos_finalizados.data}
 
-        # A. Traer partidos que ya terminaron (FINISHED) - paginado por seguridad
+                # 2. Traemos el fixture fresco completo de la API de fútbol
+                partidos_api = football_service.obtener_fixture_mundial()
+                
+                if partidos_api:
+                    # 🚀 FILTRO ESTRATÉGICO: Mandamos al upsert únicamente los activos
+                    partidos_activos_a_actualizar = [
+                        p for p in partidos_api 
+                        if int(p["id_api"]) not in ids_finalizados
+                    ]
+
+                    if partidos_activos_a_actualizar:
+                        supabase.table("partidos").upsert(partidos_activos_a_actualizar, on_conflict="id_api").execute()
+                        print(f"✅ Se actualizaron {len(partidos_activos_a_actualizar)} partidos activos.")
+                    else:
+                        print("🤷‍♂️ No hay partidos activos nuevos por impactar.")
+                    
+                    # Guardamos el registro del candado temporal global
+                    supabase.table("constantes_torneo").update({"ultima_sincronizacion": ahora.isoformat()}).eq("id", 1).execute()
+            
+            except Exception as api_err:
+                print(f"⚠️ No se pudo auto-sincronizar (API externa caída o sin saldo): {api_err}")
+
+        # -------------------------------------------------------------------------
+        # PROCESAMIENTO GENERAL DEL RANKING
+        # -------------------------------------------------------------------------
         partidos = fetch_all_rows("partidos", filtros={"estado": "FINISHED"})
         partidos_dict = {int(p["id_api"]): p for p in partidos}
 
-        # B. Traer TODOS los pronósticos de TODOS los usuarios - paginado (esto es lo que se estaba cortando en 1000 filas)
         pronosticos = fetch_all_rows("pronosticos")
         usuarios = fetch_all_rows("profiles", select_str="id, username, campeon_prediccion, subcampeon_prediccion")
         
@@ -182,10 +185,8 @@ def obtener_tabla_posiciones():
             campeon_real = constantes_res.data[0].get("campeon_real")
             subcampeon_real = constantes_res.data[0].get("subcampeon_real")
 
-        # D. Inicializar el acumulador en el diccionario
         ranking = {u["id"]: {"username": u["username"], "puntos": 0} for u in usuarios}
 
-        # E. Correr el bucle sumador usando la calculadora matemática pura de Python
         for prono in pronosticos:
             p_id = int(prono["partido_id"])
             u_id = prono["user_id"]
@@ -206,57 +207,38 @@ def obtener_tabla_posiciones():
             )
             ranking[u_id]["puntos"] += puntos
 
-        # F. Cómputo 2: Puntos por Campeón (+10) y Subcampeón (+g)
-        # Solo se calculan si ya cargaste los resultados reales en la bdd
-      
         for u in usuarios:
             u_id = u["id"]
             if u_id not in ranking:
                 continue
             
-            # Sumamos Campeón si hay coincidencia
-            print(f"Usuario: {u['username']} | Diccionario completo: {u}")
-            print(f"  > Lo que lee de campeon_prediccion: '{u.get('campeon_prediccion')}'")
-            print(f"  > Lo que lee de subcampeon_prediccion: '{u.get('subcampeon_prediccion')}'")
-            
-            # Sumamos Campeón si hay coincidencia
             if campeon_real and u.get("campeon_prediccion") == campeon_real:
-                print(f"  ¡¡Suma 10 puntos a {u['username']}!!")
                 ranking[u_id]["puntos"] += 10
                 
-            # Sumamos Subcampeón si hay coincidencia
             if subcampeon_real and u.get("subcampeon_prediccion") == subcampeon_real:
-                print(f"  ¡¡Suma 5 puntos a {u['username']}!!")
                 ranking[u_id]["puntos"] += 5
 
-
-        # G. Ordenar la tabla definitiva de mayor a menor según sus puntos
         ranking_ordenado = sorted(ranking.values(), key=lambda x: x["puntos"], reverse=True)
-
         return {"status": "success", "data": ranking_ordenado}
 
     except Exception as e:
         print(f"❌ Error en obtener_tabla_posiciones: {e}")
         raise HTTPException(status_code=500, detail=f"Error al procesar el ranking de posiciones: {str(e)}")
-    
+
 
 @router.get("/{partido_id}/pronosticos-grupo")
 def obtener_pronosticos_grupo(partido_id: int):
     """
-    Devuelve los pronósticos de todos los usuarios para un partido específico,
-    incluyendo el username de cada uno para poder armar el desglose.
+    Devuelve los pronósticos de todos los usuarios para un partido específico.
     """
     try:
-        # Traemos los pronósticos de este partido cruzando con la tabla profiles
         res = supabase.table("pronosticos") \
             .select("goles_pronostico_1, goles_pronostico_2, gana_penales_pronostico, user_id, profiles(username)") \
             .eq("partido_id", partido_id) \
             .execute()
             
-        # Acomodamos el JSON para que sea más fácil de leer en React
         votos = []
         for item in res.data:
-            # profiles puede venir como diccionario por la relación
             profile = item.get("profiles", {})
             votos.append({
                 "user_id": item.get("user_id"),
