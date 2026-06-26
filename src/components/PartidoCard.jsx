@@ -129,15 +129,27 @@ export default function PartidoCard({
 
   useEffect(() => {
     if (votoInicial) {
-      setGoles1(votoInicial.goles_pronostico_1.toString());
-      setGoles2(votoInicial.goles_pronostico_2.toString());
+      const g1Str = votoInicial.goles_pronostico_1.toString();
+      const g2Str = votoInicial.goles_pronostico_2.toString();
+
+      // 🚀 CONVERSIÓN INVERSA: Pasamos el "1" o "2" de la BDD al nombre del país
+      let paisAvanza = null;
+      if (votoInicial.gana_penales_pronostico === "1")
+        paisAvanza = partido.equipo_1;
+      if (votoInicial.gana_penales_pronostico === "2")
+        paisAvanza = partido.equipo_2;
+
+      setGoles1(g1Str);
+      setGoles2(g2Str);
+      setEquipoAvanza(paisAvanza); // Selecciona el botón correcto en la UI
+
       setVotoGuardado({
-        g1: votoInicial.goles_pronostico_1.toString(),
-        g2: votoInicial.goles_pronostico_2.toString(),
-        avanza: votoInicial.equipo_avanza_pronostico,
+        g1: g1Str,
+        g2: g2Str,
+        avanza: paisAvanza,
       });
     }
-  }, [votoInicial]);
+  }, [votoInicial, partido.equipo_1, partido.equipo_2]);
 
   const esEliminatoria = partido.instancia !== "GROUP_STAGE";
   const esEmpateEnInputs = goles1 !== "" && goles2 !== "" && goles1 === goles2;
@@ -177,6 +189,10 @@ export default function PartidoCard({
       return;
     }
 
+    let penalesVoto = null;
+    if (equipoAvanza === partido.equipo_1) penalesVoto = "1";
+    if (equipoAvanza === partido.equipo_2) penalesVoto = "2";
+
     setGuardando(true);
     try {
       const { error } = await supabase.from("pronosticos").upsert(
@@ -185,6 +201,7 @@ export default function PartidoCard({
           partido_id: partido.id_api,
           goles_pronostico_1: parseInt(goles1),
           goles_pronostico_2: parseInt(goles2),
+          gana_penales_pronostico: penalesVoto,
         },
         {
           onConflict: "user_id,partido_id",
