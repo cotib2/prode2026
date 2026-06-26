@@ -59,14 +59,14 @@ def sincronizar_fixture():
 
         # 1. Traemos cómo están los partidos guardados localmente para comparar estados
         partidos_locales = fetch_all_rows("partidos", select_str="id_api, estado")
-        estados_locales = {p["id_api"]: p["estado"] for p in partidos_locales}
+        estados_locales = {str(p["id_api"]): p["estado"] for p in partidos_locales}
 
         # 2. Buscamos qué usuarios hay en el sistema y sus pronósticos
         usuarios = fetch_all_rows("profiles", select_str="id")
         
         # Procesamos cada partido que viene de la API externa
         for p_api in partidos_api:
-            p_id = p_api["id_api"]
+            p_id = str(p_api["id_api"])
             estado_nuevo = p_api["estado"]
             estado_viejo = estados_locales.get(p_id)
 
@@ -190,7 +190,7 @@ def obtener_tabla_posiciones():
         # Modificá 'puntos_totales' por el nombre exacto de tu columna si cambia en Postgres
         usuarios_res = supabase.table("profiles")\
             .select("username, puntos_totales")\
-            .order("puntos_totales", ascending=False)\
+            .order("puntos_totales", desc=True)\
             .execute()
 
         # Moldeamos la respuesta para que tu Frontend (TablaPuntos.jsx) la lea sin enterarse del cambio
