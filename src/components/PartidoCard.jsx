@@ -5,11 +5,12 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
 
 const TRADUCCIONES_INSTANCIAS = {
   GROUP_STAGE: "Fase de Grupos",
-  LAST_16: "Octavos de Final",
-  QUARTER_FINALS: "Cuartos de Final",
+  LAST_32: "Dieciseisavos",
+  LAST_16: "Octavos",
+  QUARTER_FINALS: "Cuartos",
   SEMI_FINALS: "Semifinal",
   THIRD_PLACE: "Tercer Puesto",
-  FINAL: "Gran Final",
+  FINAL: "Final",
 };
 
 function calcularPuntosEspejo(prono, partido) {
