@@ -82,6 +82,8 @@ def sincronizar_fixture():
                 for u in usuarios:
                     u_id = u["id"]
                     prono = pronos_dict.get(u_id)
+                    if prono and prono.get("puntos_ganados") is not None:
+                        continue
                     
                     puntos_ganados = 0
                     if prono:
@@ -182,8 +184,9 @@ def obtener_tabla_posiciones():
         else:
             necesita_sincronizar = True
 
-        # Si el candado venció, disparamos la sincronización que revisa partidos e impacta los puntos
+        # Si el candado venció, cerramos el candado INMEDIATAMENTE en la BDD y sincronizamos
         if necesita_sincronizar:
+            supabase.table("constantes_torneo").update({"ultima_sincronizacion": ahora.isoformat()}).eq("id", 1).execute()
             sincronizar_fixture()
 
         # 2. 🚀 LA MAGIA: Traemos los usuarios ordenados directamente por su puntaje acumulado
