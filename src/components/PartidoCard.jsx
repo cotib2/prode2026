@@ -5,7 +5,7 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
 
 const TRADUCCIONES_INSTANCIAS = {
   GROUP_STAGE: "Fase de Grupos",
-  LAST_32: "Dieciseisavos",
+  LAST_32: "16avos",
   LAST_16: "Octavos",
   QUARTER_FINALS: "Cuartos",
   SEMI_FINALS: "Semifinal",
