@@ -520,3 +520,62 @@
     transform: rotate(360deg);
   }
 }
+
+/* ==========================================================================
+   📦 PARTE 3: PESTAÑAS DINÁMICAS DE FASES
+   ========================================================================== */
+
+.tabs-container {
+  display: flex;
+  gap: 12px;
+  overflow-x: auto;
+  padding: 4px 4px 12px 4px;
+  margin-bottom: 16px;
+  border-bottom: 2px solid #e5e7eb;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Ocultar barra de scroll en navegadores basados en webkit (Chrome/Safari) */
+.tabs-container::-webkit-scrollbar {
+  display: none;
+}
+.tabs-container {
+  -ms-overflow-style: none; /* IE y Edge */
+  scrollbar-width: none; /* Firefox */
+}
+
+.tab-btn {
+  background: transparent;
+  border: none;
+  padding: 8px 16px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #6b7280;
+  cursor: pointer;
+  border-radius: 8px;
+  white-space: nowrap;
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.tab-btn:hover {
+  background: #f3f4f6;
+  color: #374151;
+}
+
+/* Efecto de pestaña activa (borde inferior flotante) */
+.tab-btn.active {
+  color: #2563eb;
+  background: #eff6ff;
+}
+
+.tab-btn.active::after {
+  content: "";
+  position: absolute;
+  bottom: -14px; /* Baja hasta la línea gris divisoria */
+  left: 0;
+  width: 100%;
+  height: 3px;
+  background-color: #2563eb;
+  border-radius: 4px 4px 0 0;
+}
