@@ -70,46 +70,36 @@ def sincronizar_fixture():
             estado_nuevo = p_api["estado"]
             estado_viejo = estados_locales.get(p_id)
 
-            # 🚀 CONDICIÓN CLAVE: El partido acaba de terminar en la API externa
             if estado_nuevo == "FINISHED" and estado_viejo != "FINISHED":
                 print(f"⚽ ¡Partido Finalizado Detectado! Calculando puntos para el partido ID {p_id}...")
-                
-                # Traemos los pronósticos exclusivamente de ESTE partido terminado
                 pronos_partido = fetch_all_rows("pronosticos", filtros={"partido_id": p_id})
                 pronos_dict = {prono["user_id"]: prono for prono in pronos_partido}
 
-                # Evaluamos a cada usuario registrado
                 for u in usuarios:
                     u_id = u["id"]
                     prono = pronos_dict.get(u_id)
-                    if prono and prono.get("puntos_ganados") is not None:
+                    if not prono:
                         continue
-                    
-                    puntos_ganados = 0
-                    if prono:
-                        # Ejecutamos el motor matemático para este único partido
-                        puntos_ganados = calcular_puntos_prode_complejo(
-                            prono_1=prono.get("goles_pronostico_1"),
-                            prono_2=prono.get("goles_pronostico_2"),
-                            p_avanza=prono.get("gana_penales_pronostico"),
-                            real_1=p_api.get("goles_real_1"),
-                            real_2=p_api.get("goles_real_2"),
-                            r_avanza=p_api.get("ganador_penales_real"), # Asegurá que tu API devuelva penales si aplica
-                            instancia=p_api.get("instancia")
-                        )
-                        
-                        # Guardamos los puntos ganados en el registro del pronóstico por si querés auditar
-                        supabase.table("pronosticos").update({"puntos_ganados": puntos_ganados}).eq("user_id", u_id).eq("partido_id", p_id).execute()
+
+                    puntos_ganados = calcular_puntos_prode_complejo(
+                        prono_1=prono.get("goles_pronostico_1"),
+                        prono_2=prono.get("goles_pronostico_2"),
+                        p_avanza=prono.get("gana_penales_pronostico"),
+                        real_1=p_api.get("goles_real_1"),
+                        real_2=p_api.get("goles_real_2"),
+                        r_avanza=p_api.get("ganador_penales_real"),
+                        instancia=p_api.get("instancia")
+                    )
 
                     if puntos_ganados > 0:
-                        # 💥 INCREMENTO INCREMENTAL: Usamos RPC de Supabase para evitar condiciones de carrera
-                        # Si no tenés la función RPC, abajo te explico cómo crearla en 1 segundo.
                         supabase.rpc("incrementar_puntos_usuario", {"user_id_param": u_id, "puntos_incremento": puntos_ganados}).execute()
-                        print(f"   > +{puntos_ganados} pts aplicados a la columna puntos_totales del usuario {u_id}")
+                        print(f"   > +{puntos_ganados} pts aplicados a {u_id}")
 
-        # 3. Guardamos los cambios de los partidos en Supabase
+                # 🔒 Lo marcamos como procesado YA, antes de pasar al próximo partido
+                supabase.table("partidos").upsert(p_api, on_conflict="id_api").execute()
+
+        # Upsert general para mantener actualizados estados en vivo, fechas, etc.
         supabase.table("partidos").upsert(partidos_api, on_conflict="id_api").execute()
-
         return {
             "status": "success",
             "message": f"Se sincronizaron {len(partidos_api)} partidos. Se procesaron los puntos acumulados de los partidos finalizados."
