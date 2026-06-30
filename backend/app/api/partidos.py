@@ -98,11 +98,12 @@ def sincronizar_fixture():
                 # 🔒 Lo marcamos como procesado YA, antes de pasar al próximo partido
                 supabase.table("partidos").upsert(p_api, on_conflict="id_api").execute()
 
-        # Upsert general para mantener actualizados estados en vivo, fechas, etc.
-        supabase.table("partidos").upsert(partidos_api, on_conflict="id_api").execute()
+        # Upsert general solo para partidos no finalizados (los FINISHED ya se procesaron arriba)
+        partidos_no_finalizados = [p for p in partidos_api if p["estado"] != "FINISHED"]
+        supabase.table("partidos").upsert(partidos_no_finalizados, on_conflict="id_api").execute()
         return {
             "status": "success",
-            "message": f"Se sincronizaron {len(partidos_api)} partidos. Se procesaron los puntos acumulados de los partidos finalizados."
+            "message": f"Se sincronizaron {len(partidos_no_finalizados)} partidos activos. Se procesaron los puntos acumulados de los partidos finalizados."
         }
     except Exception as e:
         print(f"❌ Error en sincronizar_fixture: {e}")
