@@ -387,7 +387,16 @@ export default function PartidoCard({
                     <div className="grupo-valores-derecha">
                       <span className="grupo-prediccion">
                         {v.g1} - {v.g2}
-                        {v.avanza && <small> ({v.avanza})</small>}
+                        {v.avanza && (
+                          <small>
+                            {" "}
+                            (
+                            {v.avanza === "1"
+                              ? partido.equipo_1
+                              : partido.equipo_2}
+                            )
+                          </small>
+                        )}
                       </span>
                       {partidoTerminado && ptsSumados !== null && (
                         <span
