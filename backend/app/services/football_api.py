@@ -103,6 +103,13 @@ class FootballAPIService:
                 # Mapeamos "HOME_TEAM" a "1" (equipo_1) y "AWAY_TEAM" a "2" (equipo_2)
                 ganador_penales = "1" if winner == "HOME_TEAM" else "2"
 
+            # Elegimos el bloque de goles según la duración del partido
+            duration = score_data.get("duration")
+            if duration in ("EXTRA_TIME", "PENALTY_SHOOTOUT"):
+                score_block = score_data.get("extraTime") or {}
+            else:
+                score_block = score_data.get("fullTime") or {}
+
             # Estructuramos el diccionario para la tabla 'partidos'
             partido = {
                 "id_api": str(match.get("id")),
@@ -110,8 +117,8 @@ class FootballAPIService:
                 "equipo_2": away_es,
                 "fecha": match.get("utcDate"),
                 "instancia": match.get("stage"), # Ej: 'GROUP_STAGE'
-                "goles_real_1": score_data.get("fullTime", {}).get("home"),
-                "goles_real_2": score_data.get("fullTime", {}).get("away"),
+                "goles_real_1": score_block.get("home"),
+                "goles_real_2": score_block.get("away"),
                 "estado": match.get("status"), # TIMED, IN_PLAY, FINISHED
                 "ganador_penales_real": ganador_penales # 💥 Guardamos el ganador de los penales
             }
