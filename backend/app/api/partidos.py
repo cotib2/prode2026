@@ -91,9 +91,14 @@ def sincronizar_fixture():
                         instancia=p_api.get("instancia")
                     )
 
+                    # SOLUCIÓN CONDICIÓN DE CARRERA: Hacemos un UPDATE idempotente
+                    # No importa si 5 hilos corren esto al mismo tiempo, el valor final será el mismo.
+                    supabase.table("pronosticos").update({
+                        "puntos_ganados": puntos_ganados
+                    }).eq("user_id", u_id).eq("partido_id", p_id).execute()
+                    
                     if puntos_ganados > 0:
-                        supabase.rpc("incrementar_puntos_usuario", {"user_id_param": u_id, "puntos_incremento": puntos_ganados}).execute()
-                        print(f"   > +{puntos_ganados} pts aplicados a {u_id}")
+                        print(f"   > {puntos_ganados} pts guardados para {u_id}")
 
                 # 🔒 Lo marcamos como procesado YA, antes de pasar al próximo partido
                 supabase.table("partidos").upsert(p_api, on_conflict="id_api").execute()
@@ -180,9 +185,9 @@ def obtener_tabla_posiciones():
             supabase.table("constantes_torneo").update({"ultima_sincronizacion": ahora.isoformat()}).eq("id", 1).execute()
             sincronizar_fixture()
 
-        # 2. 🚀 LA MAGIA: Traemos los usuarios ordenados directamente por su puntaje acumulado
-        # Modificá 'puntos_totales' por el nombre exacto de tu columna si cambia en Postgres
-        usuarios_res = supabase.table("profiles")\
+        # 2. 🚀 LA MAGIA (SIN CONDICIÓN DE CARRERA): Traemos el ranking desde la Vista
+        # La vista calcula la suma de puntos_ganados en tiempo real de forma segura.
+        usuarios_res = supabase.table("ranking_posiciones")\
             .select("username, puntos_totales")\
             .order("puntos_totales", desc=True)\
             .execute()
