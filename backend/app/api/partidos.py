@@ -230,3 +230,64 @@ def obtener_pronosticos_grupo(partido_id: int):
     except Exception as e:
         print(f"❌ Error al traer pronósticos del grupo: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+    
+
+    # ENDPOINT 4: Recálculo manual
+@router.post("/recalcular-puntos")
+def recalcular_puntos_historicos():
+    """
+    Recalcula los puntos de todos los pronósticos para los partidos que ya están finalizados (FINISHED).
+    Ideal para correr manualmente desde Swagger si hubo algún cambio en la lógica de puntajes.
+    """
+    try:
+        print("🚀 Iniciando el recálculo de puntos históricos desde el endpoint...")
+        
+        # 1. Traemos solo los partidos que ya terminaron (estado FINISHED)
+        partidos_finalizados = fetch_all_rows("partidos", filtros={"estado": "FINISHED"})
+        print(f"Se encontraron {len(partidos_finalizados)} partidos finalizados.")
+        
+        # Contador para tener un resumen al final
+        total_pronosticos_actualizados = 0
+
+        for partido in partidos_finalizados:
+            p_id = str(partido["id_api"])
+            print(f"\nProcesando partido {p_id} ({partido.get('equipo_1', 'Local')} vs {partido.get('equipo_2', 'Visitante')})...")
+            
+            # 2. Traemos todos los pronósticos para este partido específico
+            pronosticos = fetch_all_rows("pronosticos", filtros={"partido_id": p_id})
+            
+            for prono in pronosticos:
+                # 3. Calculamos los puntos con tu lógica exacta
+                puntos_reales = calcular_puntos_prode_complejo(
+                    prono_1=prono.get("goles_pronostico_1"),
+                    prono_2=prono.get("goles_pronostico_2"),
+                    p_avanza=prono.get("gana_penales_pronostico"),
+                    real_1=partido.get("goles_real_1"),
+                    real_2=partido.get("goles_real_2"),
+                    r_avanza=partido.get("ganador_penales_real"),
+                    instancia=partido.get("instancia")
+                )
+                
+                # 4. Actualizamos la fila específica de ese pronóstico con el puntaje corregido
+                supabase.table("pronosticos") \
+                    .update({"puntos_ganados": puntos_reales}) \
+                    .eq("user_id", prono["user_id"]) \
+                    .eq("partido_id", p_id) \
+                    .execute()
+                    
+                total_pronosticos_actualizados += 1
+                
+        print("\n✅ ¡Recálculo completado con éxito! La columna 'puntos_ganados' ahora es 100% confiable.")
+        
+        return {
+            "status": "success",
+            "message": "¡Recálculo completado con éxito!",
+            "data": {
+                "partidos_procesados": len(partidos_finalizados),
+                "pronosticos_actualizados": total_pronosticos_actualizados
+            }
+        }
+
+    except Exception as e:
+        print(f"❌ Error al recalcular puntos: {e}")
+        raise HTTPException(status_code=500, detail=f"Error en el recálculo: {str(e)}")
