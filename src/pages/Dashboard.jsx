@@ -16,7 +16,7 @@ const ORDEN_INSTANCIAS = [
 ];
 
 const TRADUCCIONES = {
-  GROUP_STAGE: "Fase de Grupos",
+  GROUP_STAGE: "Grupos",
   LAST_32: "16avos",
   LAST_16: "Octavos",
   QUARTER_FINALS: "Cuartos",
