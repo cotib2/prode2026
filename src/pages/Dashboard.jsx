@@ -91,7 +91,19 @@ export default function Dashboard() {
   useEffect(() => {
     // Si hay instancias disponibles y todavía no hay pestaña activa, seleccionamos la primera
     if (instanciasDisponibles.length > 0 && !pestañaActiva) {
-      setPestañaActiva(instanciasDisponibles[0]);
+      const ahora = new Date();
+
+      const instanciaVigente = instanciasDisponibles.reduce(
+        (actual, instancia) => {
+          const yaArranco = partidos.some(
+            (p) => p.instancia === instancia && new Date(p.fecha) <= ahora,
+          );
+          return yaArranco ? instancia : actual;
+        },
+        instanciasDisponibles[0],
+      );
+
+      setPestañaActiva(instanciaVigente);
     }
   }, [partidos, instanciasDisponibles, pestañaActiva]);
 
