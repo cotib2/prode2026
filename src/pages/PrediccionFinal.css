@@ -95,3 +95,97 @@
   color: #9ca3af;
   cursor: not-allowed;
 }
+
+/* ==========================================================================
+   📦 TABLA DE PREDICCIONES DEL GRUPO
+   ========================================================================== */
+
+.comunidad-predicciones-container {
+  margin-top: 32px;
+  margin-bottom: 30px;
+}
+
+.tabla-comunidad-wrapper {
+  background-color: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  overflow: hidden; /* Clave: hace que la tabla respete los bordes redondeados */
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
+}
+
+.tabla-comunidad {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  font-size: 14px;
+}
+
+.tabla-comunidad thead {
+  background-color: #f9fafb;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.tabla-comunidad th {
+  padding: 12px 16px;
+  color: #6b7280;
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 12px;
+  letter-spacing: 0.5px;
+}
+
+.tabla-comunidad td {
+  padding: 12px 16px;
+  border-bottom: 1px solid #f3f4f6;
+  color: #374151;
+}
+
+.tabla-comunidad tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.tabla-comunidad tbody tr:hover {
+  background-color: #f8fafc; /* Gris ultra claro al pasar el mouse */
+}
+
+/* 🚀 Resalta visualmente la fila de la persona que está viendo la app */
+.fila-mi-voto {
+  background-color: #eff6ff !important; /* Azul muy clarito */
+}
+
+.fila-mi-voto td {
+  color: #1d4ed8; /* Texto azul oscuro */
+}
+
+.col-user {
+  font-weight: 600;
+  color: #111827;
+  white-space: nowrap;
+}
+
+.col-campeon, .col-subcampeon {
+  font-weight: 600; /* Le damos un toque de peso a los países elegidos */
+}
+
+/* Mensaje cuando todavía nadie votó */
+.no-votos-msg {
+  text-align: center;
+  color: #9ca3af;
+  font-size: 14px;
+  padding: 20px;
+  background-color: #f9fafb;
+  border-radius: 8px;
+  border: 1px dashed #d1d5db;
+}
+
+/* 📱 Media Query para que la tabla sea scrolleable horizontalmente en celulares chicos */
+@media (max-width: 480px) {
+  .tabla-comunidad-wrapper {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .tabla-comunidad th, .tabla-comunidad td {
+    padding: 10px 12px;
+    white-space: nowrap; /* Evita que el texto de los países se parta en dos líneas */
+  }
+}
