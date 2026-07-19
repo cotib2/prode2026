@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "../lib/supabaseClient";
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
+const API_BASE_URL = import.meta.env.VITE_API_URL || "https://prode2026-8lxe.onrender.com";
 
 const TRADUCCIONES_INSTANCIAS = {
   GROUP_STAGE: "Fase de Grupos",

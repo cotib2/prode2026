@@ -58,7 +58,7 @@ def sincronizar_fixture():
             raise HTTPException(status_code=502, detail="No se pudieron obtener partidos de la API externa.")
 
         # 1. Traemos cómo están los partidos guardados localmente para comparar estados
-        partidos_locales = fetch_all_rows("partidos", select_str="id_api, estado")
+        partidos_locales = fetch_all_rows("partidos", select_str="id_api,estado")
         estados_locales = {str(p["id_api"]): p["estado"] for p in partidos_locales}
 
         # 2. Buscamos qué usuarios hay en el sistema y sus pronósticos
@@ -188,7 +188,7 @@ def obtener_tabla_posiciones():
         # 2. 🚀 LA MAGIA (SIN CONDICIÓN DE CARRERA): Traemos el ranking desde la Vista
         # La vista calcula la suma de puntos_ganados en tiempo real de forma segura.
         usuarios_res = supabase.table("ranking_posiciones")\
-            .select("username, puntos_totales")\
+            .select("username,puntos_totales")\
             .order("puntos_totales", desc=True)\
             .execute()
 
@@ -211,7 +211,7 @@ def obtener_pronosticos_grupo(partido_id: int):
     """
     try:
         res = supabase.table("pronosticos") \
-            .select("goles_pronostico_1, goles_pronostico_2, gana_penales_pronostico, user_id, profiles(username)") \
+            .select("goles_pronostico_1,goles_pronostico_2,gana_penales_pronostico,user_id,profiles(username)") \
             .eq("partido_id", partido_id) \
             .execute()
             
