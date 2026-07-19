@@ -158,50 +158,67 @@ def guardar_o_modificar_pronostico(payload: PronosticoSchema):
 # ENDPOINT 3 (EL QUE QUERÍAS REFORZAR)
 @router.get("/tabla-posiciones")
 def obtener_tabla_posiciones():
-    """
-    Retorna el ranking leyendo directamente de 'puntos_totales' en la tabla profiles.
-    Mantiene la auto-sincronización On-Demand por si hay partidos en juego.
-    """
     try:
-        # 1. Mantenemos tu sincronización On-Demand (Llama al endpoint de arriba internamente)
-        constantes_res = supabase.table("constantes_torneo").select("*").eq("id", 1).execute()
-        ahora = datetime.now(timezone.utc)
-        necesita_sincronizar = False
+        # 1. Traer valores reales
+        constantes_res = supabase.table("constantes_torneo")\
+            .select("campeon_real,subcampeon_real")\
+            .eq("id", 1)\
+            .single()\
+            .execute()
+        
+        campeon_real = constantes_res.data.get("campeon_real") if constantes_res.data else None
+        subcampeon_real = constantes_res.data.get("subcampeon_real") if constantes_res.data else None
 
-        if constantes_res.data and len(constantes_res.data) > 0:
-            constantes = constantes_res.data[0]
-            ultima_sincro_str = constantes.get("ultima_sincronizacion")
-            if ultima_sincro_str:
-                ultima_sincro = datetime.fromisoformat(ultima_sincro_str.replace("Z", "+00:00"))
-                if ahora - ultima_sincro > timedelta(minutes=2):
-                    necesita_sincronizar = True
-            else:
-                necesita_sincronizar = True
-        else:
-            necesita_sincronizar = True
+        # 🚨 DEBUG: Imprimimos qué trajo de la tabla constantes_torneo
+        print(f"🏆 REALES -> Campeón: '{campeon_real}' | Subcampeón: '{subcampeon_real}'")
 
-        # Si el candado venció, cerramos el candado INMEDIATAMENTE en la BDD y sincronizamos
-        if necesita_sincronizar:
-            supabase.table("constantes_torneo").update({"ultima_sincronizacion": ahora.isoformat()}).eq("id", 1).execute()
-            sincronizar_fixture()
-
-        # 2. 🚀 LA MAGIA (SIN CONDICIÓN DE CARRERA): Traemos el ranking desde la Vista
-        # La vista calcula la suma de puntos_ganados en tiempo real de forma segura.
+        # 2. Traer ranking base
         usuarios_res = supabase.table("ranking_posiciones")\
             .select("username,puntos_totales")\
-            .order("puntos_totales", desc=True)\
             .execute()
 
-        # Moldeamos la respuesta para que tu Frontend (TablaPuntos.jsx) la lea sin enterarse del cambio
-        ranking_ordenado = [
-            {"username": u["username"], "puntos": u.get("puntos_totales", 0)}
-            for u in usuarios_res.data
-        ]
+        # 3. Traer predicciones
+        perfiles_res = supabase.table("profiles")\
+            .select("username,campeon_prediccion,subcampeon_prediccion")\
+            .execute()
 
+        predicciones_dict = {
+            p["username"]: p 
+            for p in perfiles_res.data if p.get("username")
+        }
+
+        # 4. Procesar y sumar
+        ranking_final = []
+        for u in usuarios_res.data:
+            username = u["username"]
+            pts = u.get("puntos_totales", 0)
+            if pts is None: # Por si viene un nulo
+                pts = 0
+                
+            pred = predicciones_dict.get(username, {})
+            pred_camp = pred.get("campeon_prediccion")
+            pred_sub = pred.get("subcampeon_prediccion")
+
+            # 🚨 DEBUG: Imprimimos qué votó cada usuario
+            print(f"👤 {username} -> Votó Campeón: '{pred_camp}' | Votó Subcampeón: '{pred_sub}' | Puntos Base: {pts}")
+
+            bonus = 0
+            # Usamos .strip().lower() para evitar problemas de mayúsculas o espacios extra
+            if campeon_real and pred_camp and campeon_real.strip().lower() == pred_camp.strip().lower():
+                bonus += 10
+                print(f"   ✅ ¡Acertó campeón! +10 puntos")
+                
+            if subcampeon_real and pred_sub and subcampeon_real.strip().lower() == pred_sub.strip().lower():
+                bonus += 5
+                print(f"   ✅ ¡Acertó subcampeón! +5 puntos")
+            
+            ranking_final.append({"username": username, "puntos": pts + bonus})
+
+        ranking_ordenado = sorted(ranking_final, key=lambda x: x["puntos"], reverse=True)
         return {"status": "success", "data": ranking_ordenado}
 
     except Exception as e:
-        print(f"❌ Error en obtener_tabla_posiciones simplificado: {e}")
+        print(f"❌ Error en tabla-posiciones: {e}")
         raise HTTPException(status_code=500, detail=f"Error al traer posiciones: {str(e)}")
 
 @router.get("/{partido_id}/pronosticos-grupo")
